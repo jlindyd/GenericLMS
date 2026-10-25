@@ -7,7 +7,8 @@ export async function readService(service,path,{token,fetcher=fetch}={}){
  return response.json();
 }
 export const pagePath=(path,locale)=>'page?'+new URLSearchParams({site:connection.site,path,language:resolveLocale(locale)});
-export const feedPath=(filter,locale,page=0)=>'pages?'+new URLSearchParams({site:connection.site,language:resolveLocale(locale),featureScope:filter,page:String(page),resultsPerPage:'10'});
+// The existing site asks for 25 articles per page (5 on phones).
+export const feedPath=(filter,locale,page=0,resultsPerPage=25)=>'pages?'+new URLSearchParams({site:connection.site,language:resolveLocale(locale),featureScope:filter,page:String(page),resultsPerPage:String(resultsPerPage)});
 export function positiveId(value){const id=Number(value);if(!Number.isSafeInteger(id)||id<=0)throw new ServiceError('Unknown item.',400);return id}
 export function cmsReadPath(query){switch(query.resource){case 'sites':return 'sites';case 'site':return 'sites/'+positiveId(query.siteId);case 'page':return 'sites/'+positiveId(query.siteId)+'/pages/'+positiveId(query.pageId);case 'pages':{const page=Number(query.page||0);if(!Number.isSafeInteger(page)||page<0)throw new ServiceError('Invalid page.',400);const p=new URLSearchParams({search:String(query.search||'').slice(0,200),page:String(page),language:resolveLocale(query.lang)});if(query.status&&['Active','Inactive'].includes(query.status))p.set('status',query.status);return 'sites/'+positiveId(query.siteId)+'/pages?'+p;}default:throw new ServiceError('Unsupported read request.',400)}}
 export function noStore(res){res.setHeader('Cache-Control','private, no-store');res.setHeader('X-Content-Type-Options','nosniff')}

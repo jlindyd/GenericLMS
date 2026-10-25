@@ -15,7 +15,7 @@ export default function HighlightedSection({ title, subtitle, children }) {
     <Card>
       <Boundary><Positioner><Stripe /></Positioner></Boundary>
       <Heading>
-        <Box component="h2" sx={{ fontSize: '2.8rem', fontWeight: 'bold', m: 0 }}>{title}</Box>
+        <Box component="h2" sx={{ fontSize: '3rem', lineHeight: 1.2, fontWeight: 'bold', m: 0 }}>{title}</Box>
         {subtitle && <div style={{ marginTop: 'var(--space-sm)' }}>{subtitle}</div>}
       </Heading>
       <Buttons role="group" aria-label={title}>{children}</Buttons>

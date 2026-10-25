@@ -5,6 +5,9 @@ import xss from 'xss';
 const embedHosts = ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'];
 const common = ['class', 'id', 'style', 'title', 'role', 'lang', 'dir', 'aria-label', 'aria-hidden', 'aria-labelledby', 'aria-describedby'];
 const allow = (tags, extra = []) => Object.fromEntries(tags.map(tag => [tag, [...common, ...extra]]));
+// Inline SVG (decorative banner shapes and icons) is kept; links, scripts, styles and embedded objects inside it are not.
+const svgAttrs = ['viewBox', 'xmlns', 'width', 'height', 'fill', 'fill-rule', 'fill-opacity', 'clip-rule', 'clip-path', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-opacity', 'stroke-miterlimit', 'opacity', 'transform', 'preserveAspectRatio', 'focusable', 'd', 'points', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'rx', 'ry', 'offset', 'stop-color', 'stop-opacity', 'gradientUnits', 'gradientTransform', 'patternUnits', 'maskUnits', 'version'];
+const svgShapes = Object.fromEntries(['svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon', 'defs', 'linearGradient', 'radialGradient', 'stop', 'clipPath', 'mask', 'title', 'desc'].map(tag => [tag.toLowerCase(), [...common, ...svgAttrs]]));
 const whiteList = {
   ...allow(['div', 'span', 'p', 'br', 'hr', 'section', 'article', 'header', 'footer', 'nav', 'main', 'aside', 'figure', 'figcaption', 'center', 'blockquote', 'pre', 'code', 'em', 'strong', 'b', 'i', 'u', 's', 'small', 'sub', 'sup', 'mark', 'ul', 'ol', 'li', 'dl', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'caption', 'colgroup', 'details', 'summary', 'picture', 'button', 'label', 'time', 'abbr', 'cite', 'q']),
   td: [...common, 'colspan', 'rowspan'], th: [...common, 'colspan', 'rowspan'], col: [...common, 'span'],
@@ -14,6 +17,7 @@ const whiteList = {
   iframe: [...common, 'src', 'width', 'height', 'allow', 'allowfullscreen', 'frameborder', 'loading'],
   video: [...common, 'src', 'poster', 'controls', 'width', 'height'],
   font: [...common, 'color', 'size', 'face'],
+  ...svgShapes,
 };
 
 const safeUrl = value => /^(https?:|mailto:|tel:|\/(?!\/)|#|\.\.?\/|[^:]*$)/i.test(String(value).trim());

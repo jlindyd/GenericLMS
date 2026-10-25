@@ -20,7 +20,7 @@ function load(file, reqs = {}) {
 
   // CMS read paths match the existing site's contract.
   assert.equal(server.pagePath('about-page', 'fr'), 'page?site=hp-life&path=about-page&language=fr');
-  assert.equal(server.feedPath('success-stories', 'xx'), 'pages?site=hp-life&language=en&featureScope=success-stories&page=0&resultsPerPage=10');
+  assert.equal(server.feedPath('success-stories', 'xx'), 'pages?site=hp-life&language=en&featureScope=success-stories&page=0&resultsPerPage=25');
   assert.throws(() => server.positiveId('0'), /Unknown item/);
   const calls = []; const fetcher = async (url, init) => { calls.push([url, init]); return { ok: true, status: 200, json: async () => ({}) }; };
   await server.readService('cms', 'page?x=1', { fetcher });
@@ -45,6 +45,10 @@ function load(file, reqs = {}) {
   assert.doesNotMatch(cleanCss('a{color:red}</style><script>x</script>'), /<\/style/i);
   assert.equal(cleanCss('a{}</STYLE>b'), 'a{}b');
   assert.equal(cleanPage({ title: 't', content: '<p>x</p><script>1</script>', style: '.a{}' }).content, '<p>x</p>');
+  // Decorative inline SVG survives; anything that can run code or load other things inside it does not.
+  const svg = cleanHtml('<svg viewBox="0 0 10 10" onload="x()"><defs><linearGradient id="g"><stop offset="0" stop-color="red"/></linearGradient></defs><path d="M0 0L5 5" fill="url(#g)"/><script>alert(1)</script><use href="javascript:alert(1)"/></svg>');
+  assert.match(svg, /<svg viewbox="0 0 10 10"/i); assert.match(svg, /<path d="M0 0L5 5"/); assert.match(svg, /lineargradient/i); assert.match(svg, /stop-color="red"/);
+  assert.doesNotMatch(svg, /onload|script|alert|<use|href/i);
 
   // Translations: every language has the sections and keys the pages use.
   const needed = { BasePageContainer: ['loginBtn', 'allCourses', 'searchText', 'about', 'successStories', 'partners', 'community', 'news', 'courses', 'termsOfUseLink', 'privacyPolicyLink', 'Useofcookies', 'languageText'], BrandProgram: ['logoMessage', 'badgeText', 'trademark', 'privacyLink', 'UseofcookiesLink', 'startTodaySubTitle'], Aboutus: ['startToday', 'joinNow', 'exploreCourses'], SuccessStories: ['successStories', 'viewSuccessStory'], common: ['pauseCarousel', 'playCarousel'] };
@@ -55,6 +59,19 @@ function load(file, reqs = {}) {
   const css = fs.readFileSync(__dirname + '/platform/brand-variables.css', 'utf8');
   for (const name of ['--primary-color: #024AD8', '--text-color: #2C3038', '--footer-bg', '--body-bg-light', '--link-color: #024AD8', '--sonic-silver', '--highlighted-section-bg: #024AD8']) assert.ok(css.includes(name), name);
   assert.ok(!css.includes('--highlighted-text-color'), 'the live site does not define --highlighted-text-color; headings must stay dark');
+
+  // Long dates as the existing site writes them.
+  const { formatLongDate } = load('platform/dates.js');
+  assert.equal(formatLongDate('2026-08-10T00:00:00Z', 'en'), '10 August 2026'); assert.equal(formatLongDate('2026-08-05T12:00:00Z', 'en'), '05 August 2026');
+  assert.equal(formatLongDate('', 'en'), ''); assert.equal(formatLongDate('not a date', 'fr'), '');
+
+  // The shared page loader: success gets cached and cleaned, a missing page is a 404 message, a service failure is a 502 message.
+  const { loadCmsPage } = load('platform/pages.js', { './config.js': config, './server.js': { pagePath: server.pagePath, readService: async (s, path) => { if (path.includes('missing')) throw new server.ServiceError('This content is not available in the selected language.', 404); if (path.includes('down')) throw new Error('boom'); return { title: 'T', content: '<p>x</p><script>1</script>', style: '.a{}', seo: {} }; }, ServiceError: server.ServiceError }, './sanitize.js': { cleanPage } });
+  const run = async path => { const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, statusCode: 200 }; const out = await loadCmsPage(path, { lang: 'fr' }, res); return { res, out }; };
+  let r = await run('help-page'); assert.equal(r.out.props.locale, 'fr'); assert.equal(r.out.props.page.content, '<p>x</p>'); assert.match(r.res.headers['Cache-Control'], /s-maxage=60/); assert.equal(r.res.statusCode, 200);
+  r = await run('missing'); assert.equal(r.res.statusCode, 404); assert.equal(r.out.props.page, null); assert.match(r.out.props.message, /not available/);
+  r = await run('down'); assert.equal(r.res.statusCode, 502); assert.match(r.out.props.message, /unavailable/);
+  assert.equal(config.cmsBindings.termsOfUse, 'terms-of-use-page'); assert.equal(config.cmsBindings.homeAbout, 'before-login-about-us-section'); assert.equal(config.cmsFeeds.news, 'news');
 
   // Assets the pages reference exist.
   for (const file of ['brand/logo.svg', 'brand/foundation.svg', 'brand/FormaDJRUI-Regular.woff2', 'badge/ios/app-Store-Badge-EN.svg', 'badge/android/google-play-badge-ZH.svg', 'favicon.ico']) assert.ok(fs.existsSync(__dirname + '/public/' + file), file);
