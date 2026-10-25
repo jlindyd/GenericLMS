@@ -15,7 +15,7 @@ export default function Header({ locale = 'en' }) {
   const large = useMediaQuery(theme.breakpoints.up('lg'));
   const [langAnchor, setLangAnchor] = useState(null), [open, setOpen] = useState(false), [term, setTerm] = useState('');
   const t = (key, fallback) => translate(locale, 'BasePageContainer', key, fallback);
-  const search = event => { event.preventDefault(); window.location.href = learner(`/search?search=${encodeURIComponent(term)}&page=1`); };
+  const search = event => { event.preventDefault(); window.location.href = `/search?${locale === 'en' ? '' : `lang=${locale}&`}search=${encodeURIComponent(term)}&page=1`; };
   const switchLanguage = next => { setLangAnchor(null); router.push({ pathname: router.pathname, query: { ...router.query, lang: next } }); };
   const logo = <a href="/" aria-label={connection.name.replace(/ Test$/, '')} style={{ display: 'block' }}><img src="/brand/logo.svg" alt={connection.name.replace(/ Test$/, '')} width={86} height={48} /></a>;
   const login = <Button variant="outlinedPrimary" href={`${connection.auth}/${locale}/login?continue=${encodeURIComponent(connection.reference)}`}>{t('loginBtn', 'Log in')}</Button>;
@@ -33,7 +33,7 @@ export default function Header({ locale = 'en' }) {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {logo}
         {large && <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', pl: '10px' }}>
-          <Button variant="containedSecondary" href={learner('/allcourses?page=1')} endIcon={<KeyboardArrowDown />}>{t('allCourses', 'All Courses')}</Button>
+          <Button variant="containedSecondary" href={`/allcourses?${locale === 'en' ? '' : `lang=${locale}&`}page=1`} endIcon={<KeyboardArrowDown />}>{t('allCourses', 'All Courses')}</Button>
           {searchBox}
         </Box>}
       </Box>
@@ -43,7 +43,7 @@ export default function Header({ locale = 'en' }) {
       </Box>
       {!large && open && <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2, py: 2 }}>
         {searchBox}
-        <Button variant="containedSecondary" href={learner('/allcourses?page=1')}>{t('allCourses', 'All Courses')}</Button>
+        <Button variant="containedSecondary" href={`/allcourses?${locale === 'en' ? '' : `lang=${locale}&`}page=1`}>{t('allCourses', 'All Courses')}</Button>
         {login}{join}{languageButton}
       </Box>}
     </Box>

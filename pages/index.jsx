@@ -4,14 +4,16 @@ import Layout from '../components/Layout';
 import BannerCarousel from '../components/BannerCarousel';
 import CmsContent from '../components/CmsContent';
 import HighlightedSection from '../components/HighlightedSection';
+import ExploreCourses from '../components/ExploreCourses';
 import HomeSection from '../components/HomeSection';
 import { cmsBindings, cmsFeeds, connection, resolveLocale } from '../platform/config';
 import { translate } from '../platform/i18n';
 import { feedPath, pagePath, readService, ServiceError } from '../platform/server';
+import { categoriesPath, categoryItem, courseCard, coursesPath, readLearning } from '../platform/learning';
 import { cleanPage } from '../platform/sanitize';
 
 // Public home, built so far from the CMS only: campaign banners, "about us", statistics, partners, and "Start today".
-// Still to come: "Explore our courses" (Learning API), the success stories highlight, and the news strip.
+// Also "Explore our courses" (Learning API). Still to come: the success stories highlight and the news strip.
 const read = (path, locale) => readService('cms', pagePath(path, locale)).then(cleanPage).catch(() => null);
 
 export async function getServerSideProps({ query, res }) {
@@ -23,20 +25,33 @@ export async function getServerSideProps({ query, res }) {
       Promise.all((feed.results || []).map(item => read(item.path, locale).then(page => page && { path: item.path, ...page }))),
       read(cmsBindings.homeAbout, locale), read(cmsBindings.homeStatistics, locale), read(cmsBindings.homePartners, locale),
     ]);
+    // One list of courses per category for the "Explore our courses" tabs. A category whose list fails just shows no courses.
+    const categories = await readLearning(categoriesPath(locale)).then(list => (Array.isArray(list) ? list : []).map(categoryItem)).catch(() => []);
+    const coursesByCategory = Object.fromEntries(await Promise.all(categories.map(async c => [c.id, await readLearning(coursesPath({ language: locale, categoryId: c.id, resultsPerPage: 25 })).then(r => (r.results || []).map(courseCard)).catch(() => [])])));
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners } };
+    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners, categories, coursesByCategory } };
   } catch (error) {
-    return { props: { locale, banners: [], about: null, statistics: null, partners: null, message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
+    return { props: { locale, banners: [], about: null, statistics: null, partners: null, categories: [], coursesByCategory: {}, message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
   }
 }
 
-export default function Home({ locale, banners, about, statistics, partners, message }) {
+export default function Home({ locale, banners, about, statistics, partners, categories = [], coursesByCategory = {}, message }) {
   const t = (section, key) => translate(locale, section, key);
   return <Layout locale={locale} title={about?.title || 'Free Courses with Online Certificates | HP LIFE'} description={about?.seo?.description} keywords={about?.seo?.keywords}>
     {message && <div className="wrapper"><p role="alert">{message}</p></div>}
     <BannerCarousel banners={banners} locale={locale} />
     {about && <HomeSection><CmsContent page={about} id="home-about" /></HomeSection>}
     {statistics && <HomeSection bgcolor="#f3f3f3"><CmsContent page={statistics} id="home-statistics" /></HomeSection>}
+    {categories.length > 0 && <HomeSection sx={{ mt: '8rem', mb: '8rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', padding: '1rem 2rem' }}>
+        <h2 style={{ fontSize: 32, fontWeight: 500, lineHeight: 1.5, margin: 0, maxWidth: '100%', textAlign: 'center' }}>{t('HomePage', 'exploreOurCourses')}</h2>
+        <p style={{ fontSize: '1.6rem', textAlign: 'center', lineHeight: 1.5, margin: 0, marginTop: '0.5rem', padding: '0 3rem' }}>{t('HomePage', 'exploreOurCoursesDescription')}</p>
+      </div>
+      <div style={{ display: 'flex', width: '100%', marginTop: 0, flexDirection: 'column', justifyContent: 'space-between' }}>
+        <ExploreCourses categories={categories} coursesByCategory={coursesByCategory} locale={locale} />
+        <Button variant="containedPrimary" size="large" sx={{ alignSelf: 'center' }} href={`/allcourses?${locale === 'en' ? '' : `lang=${locale}&`}page=1`}>{t('HomePage', 'exploreAllCourses')}</Button>
+      </div>
+    </HomeSection>}
     {partners && <section style={{ padding: '75px 0' }}>
       <CmsContent page={partners} id="home-partners" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

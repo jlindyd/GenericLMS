@@ -45,11 +45,11 @@ export default function Footer({ locale = 'en' }) {
   const year = new Date().getFullYear();
   const categories = [['1-communication', 'Communication'], ['7-digital-business-skills', 'Digital Business Skills'], ['2-entrepreneurship', 'Entrepreneurship'], ['3-finance', 'Finance'], ['4-marketing', 'Marketing'], ['6-professional-development', 'Professional Development']];
   const menu = [
-    { label: connection.name.replace(/ Test$/, ''), items: [{ label: t('BasePageContainer', 'about', 'About'), href: '/about' }, { label: t('BasePageContainer', 'successStories', 'Success Stories'), href: learner('/successstories') }, { label: t('BasePageContainer', 'partners', 'Partners'), href: learner('/partners') }, { label: t('NavigationBar', 'help', 'Help'), href: learner('/help') }] },
-    { label: t('BasePageContainer', 'community', 'Community'), items: [{ label: t('BasePageContainer', 'news', 'News'), href: learner('/news') }] },
-    { label: t('BasePageContainer', 'courses', 'Courses'), items: [{ label: t('BasePageContainer', 'allCourses', 'All Courses').replace('All Courses', 'All courses'), href: learner('/allcourses?page=1') }, ...categories.map(([slug, name]) => ({ label: name, href: learner('/categorylist/' + slug) }))] },
+    { label: connection.name.replace(/ Test$/, ''), items: [{ label: t('BasePageContainer', 'about', 'About'), href: '/about' }, { label: t('BasePageContainer', 'successStories', 'Success Stories'), href: '/successstories' }, { label: t('BasePageContainer', 'partners', 'Partners'), href: '/partners' }, { label: t('NavigationBar', 'help', 'Help'), href: '/help' }] },
+    { label: t('BasePageContainer', 'community', 'Community'), items: [{ label: t('BasePageContainer', 'news', 'News'), href: '/news' }] },
+    { label: t('BasePageContainer', 'courses', 'Courses'), items: [{ label: t('BasePageContainer', 'allCourses', 'All Courses').replace('All Courses', 'All courses'), href: '/allcourses?page=1' }, ...categories.map(([slug, name]) => ({ label: name, href: '/categorylist/' + slug }))] },
   ];
-  const credits = [[t('BasePageContainer', 'termsOfUseLink', 'Terms of use'), learner('/termsOfUse')], [t('BasePageContainer', 'privacyPolicyLink', 'Privacy'), t('BrandProgram', 'privacyLink')], [t('BasePageContainer', 'Useofcookies', 'Use of cookies'), t('BrandProgram', 'UseofcookiesLink')]];
+  const credits = [[t('BasePageContainer', 'termsOfUseLink', 'Terms of use'), '/termsOfUse'], [t('BasePageContainer', 'privacyPolicyLink', 'Privacy'), t('BrandProgram', 'privacyLink')], [t('BasePageContainer', 'Useofcookies', 'Use of cookies'), t('BrandProgram', 'UseofcookiesLink')]];
   const icon = { color: 'white' };
   return <Footer_>
     <Wrapper className="wrapper">

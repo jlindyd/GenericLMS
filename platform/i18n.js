@@ -12,3 +12,10 @@ const values={
  hi:['सामग्री कार्यक्षेत्र','पृष्ठ','पृष्ठ खोजें','भाषा','स्थिति','सभी','सक्रिय','निष्क्रिय','खोलें','पूर्वावलोकन','HTML','CSS','पृष्ठ सेटिंग','नाम','पथ','टेम्पलेट','प्रकाशित','विशेषताएँ','अनुवाद','साइन इन करें','केवल पढ़ने के लिए','सामग्री की समीक्षा के लिए पृष्ठ चुनें।','फिर प्रयास करें','लोड हो रहा है…','सामग्री उपलब्ध नहीं है।','वापस','साइट','कोई मेल खाता पृष्ठ नहीं है।','पूर्वावलोकन में शिक्षार्थी साइट वाला HP LIFE लेआउट है।','डेस्कटॉप','टैबलेट','मोबाइल','शिक्षार्थी साइट खोलें','साइट चुनें','उपलब्ध पृष्ठ देखने के लिए अपने मौजूदा CMS खाते से साइन इन करें।'],
  'zh-Hans':['内容工作区','页面','搜索页面','语言','状态','全部','启用','停用','打开','预览','HTML','CSS','页面设置','名称','路径','模板','已发布','属性','翻译','登录','只读','选择页面以查看内容。','重试','加载中…','内容暂不可用。','返回','站点','没有匹配的页面。','预览与学习网站使用相同的 HP LIFE 布局。','桌面','平板','手机','打开学习网站','选择站点','请使用现有 CMS 账户登录，查看您有权访问的页面。']};
 export function messages(locale){const row=values[resolveLocale(locale)];return Object.fromEntries(keys.map((key,i)=>[key,row[i]||values.en[i]]))}
+// Keys such as "studentsEnrolled#one" / "#other" with a {count} placeholder (one for exactly 1, as the existing site does).
+export function translateCount(locale, section, base, count, fallback) {
+  const text = translate(locale, section, `${base}#${count === 1 ? 'one' : 'other'}`, fallback);
+  return text.replace('{count}', String(count));
+}
+// Fills {name}-style placeholders.
+export const fill = (text, values) => Object.entries(values).reduce((out, [k, v]) => out.replaceAll(`{${k}}`, String(v)), text);

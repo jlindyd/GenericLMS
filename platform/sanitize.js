@@ -44,7 +44,10 @@ const filter = new xss.FilterXSS({
   },
 });
 
-export const cleanHtml = html => filter.process(String(html ?? ''));
+// An image the editor left without alt text is announced as decorative (empty alt), never as a file name.
+// Applied to the already filtered markup, so it cannot reintroduce anything.
+const withAlt = html => html.replace(/<img\b(?![^>]*\salt=)([^>]*?)\s*\/?>/gi, '<img$1 alt="">');
+export const cleanHtml = html => withAlt(filter.process(String(html ?? '')));
 // CSS is trusted editorial content; the only thing guarded is closing the <style> element early.
 export const cleanCss = css => String(css ?? '').replace(/<\/?style[^>]*>?/gi, '');
 export const cleanPage = page => ({ ...page, content: cleanHtml(page.content), style: cleanCss(page.style) });

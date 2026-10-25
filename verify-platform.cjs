@@ -42,6 +42,7 @@ function load(file, reqs = {}) {
   assert.doesNotMatch(cleanHtml('<iframe src="https://evil.test/x"></iframe>'), /evil\.test/);
   assert.doesNotMatch(cleanHtml('<iframe src="javascript:alert(1)"></iframe>'), /javascript/i);
   assert.doesNotMatch(cleanHtml('<!-- hidden --><p>x</p>'), /hidden/);
+  assert.equal(cleanHtml('<img src="/a.png">'), '<img src="/a.png" alt="">'); assert.equal(cleanHtml('<img src="/a.png" alt="Logo">'), '<img src="/a.png" alt="Logo">');
   assert.doesNotMatch(cleanCss('a{color:red}</style><script>x</script>'), /<\/style/i);
   assert.equal(cleanCss('a{}</STYLE>b'), 'a{}b');
   assert.equal(cleanPage({ title: 't', content: '<p>x</p><script>1</script>', style: '.a{}' }).content, '<p>x</p>');
