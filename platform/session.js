@@ -57,13 +57,27 @@ export async function readAs(token, service, path, options) {
 }
 export const isSignInRequired = error => error instanceof ServiceError && error.status === 401;
 
-// Changes the visitor makes to their own data through this site (reading a notification, dismissing one). Only the Notifications service,
-// only with the visitor's own token, and only from this site's own pages (the Origin header must match the host when a browser sends one).
+// Changes the visitor makes to their own data through this site. Only these requests are allowed (service, method, path), only with the
+// visitor's own token, and only from this site's own pages (the Origin header must match the host when a browser sends one).
+const isId = value => /^[0-9]+$/.test(value);
+const allowedChanges = [
+  ['notifications', 'POST', path => path.startsWith('Notifications/') && path.endsWith('/read') && isId(path.slice(14, -5))],
+  ['notifications', 'DELETE', path => path === 'Notifications' || (path.startsWith('Notifications/') && isId(path.slice(14)))],
+  ['identity', 'PUT', path => path === 'api/account/profile'], ['identity', 'POST', path => path === 'api/account/changepassword'], ['identity', 'POST', path => path === 'api/account/setPassword'],
+  ['identity', 'POST', path => path === 'api/account/sendconfirmemailmessage'], ['identity', 'DELETE', path => path === 'api/Account'], ['emailmarketing', 'PUT', path => path === 'Account/settings'],
+];
 export const isSameOrigin = req => { const origin = req.headers.origin; if (!origin) return true; try { return new URL(origin).host === req.headers.host; } catch { return false; } };
-export async function sendAs(token, service, path, method, { fetcher = fetch } = {}) {
-  if (service !== 'notifications' || !['POST', 'DELETE'].includes(method) || !path || path.startsWith('/') || path.includes('://') || path.includes('..')) throw new ServiceError('Invalid service request.', 400);
-  const response = await fetcher(`${connection[service]}/${path}`, { method, cache: 'no-store', signal: AbortSignal.timeout(20000), headers: { 'Client-Id': connection.clientId, Authorization: `Bearer ${token}`, 'Content-Length': '0' } });
-  if (!response.ok) throw new ServiceError(response.status === 401 ? 'Sign in to continue.' : 'The notification could not be updated.', response.status === 401 ? 401 : 502);
+export async function sendAs(token, service, path, method, { fetcher = fetch, body } = {}) {
+  if (!allowedChanges.some(([s, m, allowed]) => s === service && m === method && allowed(String(path))) || !connection[service]) throw new ServiceError('Invalid service request.', 400);
+  if (fixturesEnabled(token) && service !== 'notifications') return; // review mode: nothing is sent anywhere
+  const response = await fetcher(`${connection[service]}/${path}`, { method, cache: 'no-store', signal: AbortSignal.timeout(20000),
+    headers: { 'Client-Id': connection.clientId, Authorization: `Bearer ${token}`, ...(body === undefined ? { 'Content-Length': '0' } : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+  if (!response.ok) {
+    if (response.status === 401) throw new ServiceError('Sign in to continue.', 401);
+    let detail = '';
+    try { const data = await response.json(); detail = String(data.message || data.error_description || data.title || '').slice(0, 300); } catch { /* no readable detail */ }
+    throw new ServiceError(detail || 'The change could not be saved.', response.status >= 400 && response.status < 500 ? 400 : 502);
+  }
 }
 
 // A file (PDF) of the visitor's own, such as a certificate or the transcript, passed through with their token.

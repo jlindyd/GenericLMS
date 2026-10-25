@@ -1,7 +1,7 @@
 import {connection,resolveLocale} from './config.js';
 export class ServiceError extends Error{constructor(message,status=502){super(message);this.status=status}}
 export async function readService(service,path,{token,fetcher=fetch}={}){
- if(!['cms','identity','learning','alerts','notifications','rewards'].includes(service)||!connection[service]||!path||path.startsWith('/')||path.includes('://'))throw new ServiceError('Invalid service request.',400);
+ if(!['cms','identity','learning','alerts','notifications','rewards','emailmarketing'].includes(service)||!connection[service]||!path||path.startsWith('/')||path.includes('://'))throw new ServiceError('Invalid service request.',400);
  const response=await fetcher(connection[service]+'/'+path,{method:'GET',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{'Client-Id':connection.clientId,...(token?{Authorization:'Bearer '+token}:{})}});
  if(!response.ok)throw new ServiceError(response.status===401?'Sign in to continue.':response.status===403?'Your account does not have access to this content.':response.status===404?'This content is not available in the selected language.':'The content service is unavailable. Please retry.',response.status);
  return response.json();

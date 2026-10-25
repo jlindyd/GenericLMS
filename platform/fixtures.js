@@ -6,6 +6,9 @@ import { readService } from './server.js';
 export const fixturesEnabled = token => process.env.GENERIC_LMS_FIXTURES === '1' && token === 'fixture';
 
 export async function fixtureResponse(service, path) {
+  if (service === 'identity' && path.startsWith('api/account/profile')) return { id: 1, fullName: 'Fixture Learner', preferredName: 'Fixture', gender: 'Female', picture: null, email: 'fixture@example.test', emailConfirmed: false, phoneNumber: null, phoneNumberConfirmed: false, language: 'en', timeZone: 'America/Chicago', country: 'US' };
+  if (service === 'identity' && path.startsWith('api/account/manageinfo')) return { localLoginProvider: 'DYD', email: 'fixture@example.test', logins: [{ loginProvider: 'DYD', providerKey: 'k' }], externalLoginProviders: [] };
+  if (service === 'emailmarketing') return { isSubscribed: true };
   if (service === 'identity') return { sub: 1, name: 'Fixture Learner', preferred_username: 'Fixture Learner', email: 'fixture@example.test' };
   if (service === 'notifications') return { page: 0, pagesCount: 1, resultsCount: 2, results: [
     { id: 1, type: 'CourseCertificateEarned', resourceId: 'x', creationDate: '2026-07-01T00:00:00Z', isRead: false, title: 'You earned a certificate', body: 'Well done', imageUrl: '' },

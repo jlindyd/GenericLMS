@@ -53,6 +53,34 @@ function load(file, reqs = {}) {
   assert.equal(session.downloadName('Business: Email/1'), 'Business Email1.pdf'); assert.equal(session.downloadName('', 'certificate'), 'certificate.pdf');
   await assert.rejects(() => session.readFileAs('t', 'identity', 'x'), /Invalid service request/);
 
+  // Profile and password changes: only the listed requests, with the body sent as JSON and the API's own message passed on for a rejected change.
+  const jsonSent = [];
+  const jsonSender = async (url, init) => { jsonSent.push([url, init.method, init.headers['Content-Type'], init.body]); return { ok: true }; };
+  await session.sendAs('t', 'identity', 'api/account/profile', 'PUT', { fetcher: jsonSender, body: { fullName: 'A' } });
+  await session.sendAs('t', 'emailmarketing', 'Account/settings', 'PUT', { fetcher: jsonSender, body: { isSubscribed: true } });
+  await session.sendAs('t', 'identity', 'api/account/changepassword', 'POST', { fetcher: jsonSender, body: { OldPassword: 'a' } });
+  await session.sendAs('t', 'identity', 'api/Account', 'DELETE', { fetcher: jsonSender });
+  assert.deepEqual(jsonSent.map(x => x.slice(1)), [['PUT', 'application/json', '{"fullName":"A"}'], ['PUT', 'application/json', '{"isSubscribed":true}'], ['POST', 'application/json', '{"OldPassword":"a"}'], ['DELETE', undefined, undefined]]);
+  assert.equal(jsonSent[0][0], 'https://api.hplife-test.dyd.solutions/identity/api/account/profile');
+  for (const bad of [['identity', 'api/account/profile', 'DELETE'], ['identity', 'api/account/userinfo', 'PUT'], ['emailmarketing', 'Account/settings', 'POST'], ['identity', 'api/account/profile/../x', 'PUT'], ['learning', 'api/account/profile', 'PUT'], ['notifications', 'Notifications/x/read', 'POST'], ['notifications', 'Notifications/5/read/extra', 'POST']]) await assert.rejects(() => session.sendAs('t', ...bad, { fetcher: jsonSender }), /Invalid service request/);
+  await assert.rejects(() => session.sendAs('t', 'identity', 'api/account/changepassword', 'POST', { fetcher: async () => ({ ok: false, status: 400, json: async () => ({ message: 'Password too weak' }) }), body: {} }), error => error.message === 'Password too weak' && error.status === 400);
+  await assert.rejects(() => session.sendAs('t', 'identity', 'api/account/profile', 'PUT', { fetcher: async () => ({ ok: false, status: 401, json: async () => ({}) }), body: {} }), error => error.status === 401);
+  await assert.rejects(() => session.sendAs('t', 'identity', 'api/account/profile', 'PUT', { fetcher: async () => ({ ok: false, status: 500, json: async () => { throw new Error('x'); } }), body: {} }), error => error.status === 502);
+
+  // The profile for the profile pages, from stand-in answers.
+  const profileLoader = load('platform/profile.js', { './config.js': config, './session.js': { readAs: async (token, service, path) => {
+    if (path.startsWith('api/account/profile')) return { fullName: 'A B', email: 'a@x.test', emailConfirmed: true, language: 'zz', timeZone: 'Europe/Paris', country: 'FR', gender: null };
+    if (service === 'emailmarketing') return { isSubscribed: true };
+    return { localLoginProvider: 'DYD', logins: [{ loginProvider: 'DYD' }] };
+  } } });
+  const loaded = await profileLoader.loadProfile('t', 'fr');
+  assert.equal(loaded.profile.language, 'en'); assert.equal(loaded.profile.isSubscribed, true); assert.equal(loaded.hasPassword, true); assert.equal(loaded.profile.gender, null); assert.equal(loaded.locale, 'fr');
+  const noLogin = load('platform/profile.js', { './config.js': config, './session.js': { readAs: async (token, service, path) => { if (path.startsWith('api/account/profile')) return { fullName: 'A' }; throw new Error('down'); } } });
+  const partial = await noLogin.loadProfile('t', 'en'); assert.equal(partial.hasPassword, false); assert.equal(partial.profile.isSubscribed, false);
+
+  // The profile lists are the existing site's.
+  const lists = load('platform/profile-lists.js'); assert.equal(lists.timeZones.length, 348); assert.equal(Object.keys(lists.countries).length, 250); assert.equal(lists.countries.US, 'United States of America'); assert.ok(lists.timeZones.includes('America/Chicago'));
+
   // The fixture stand-in is off unless asked for and only answers to the word "fixture".
   assert.equal(fixtures.fixturesEnabled('fixture'), false);
   process.env.GENERIC_LMS_FIXTURES = '1';
