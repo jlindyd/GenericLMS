@@ -1,0 +1,2 @@
+import {pagePath,readService,rejectWrite,noStore,serviceFailure} from '../../platform/server';
+export default async function handler(req,res){noStore(res);if(rejectWrite(req,res))return;const path=String(req.query.path||'about-page');if(!/^[a-z0-9/-]{1,200}$/.test(path)||path.includes('..'))return res.status(400).json({message:'Invalid content path.'});try{res.json(await readService('cms',pagePath(path,req.query.lang)))}catch(e){serviceFailure(res,e)}}

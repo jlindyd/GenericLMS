@@ -1,0 +1,2 @@
+import {readService,rejectWrite,noStore,serviceFailure,ServiceError} from '../../platform/server';
+export default async function handler(req,res){noStore(res);if(rejectWrite(req,res))return;if(!req.cookies.dydBearer)return res.status(401).json({message:'Sign in to continue.'});try{res.json(await readService('identity','api/account/userinfo',{token:req.cookies.dydBearer}))}catch(e){serviceFailure(res,e)}}
