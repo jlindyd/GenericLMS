@@ -6,6 +6,8 @@ import CmsContent from '../components/CmsContent';
 import HighlightedSection from '../components/HighlightedSection';
 import ExploreCourses from '../components/ExploreCourses';
 import HomeSection from '../components/HomeSection';
+import HomeSuccessStories from '../components/HomeSuccessStories';
+import HomeNews from '../components/HomeNews';
 import { cmsBindings, cmsFeeds, connection, resolveLocale } from '../platform/config';
 import { translate } from '../platform/i18n';
 import { feedPath, pagePath, readService, ServiceError } from '../platform/server';
@@ -13,8 +15,12 @@ import { categoriesPath, categoryItem, courseCard, coursesPath, readLearning } f
 import { cleanPage } from '../platform/sanitize';
 
 // Public home, built so far from the CMS only: campaign banners, "about us", statistics, partners, and "Start today".
-// Also "Explore our courses" (Learning API). Still to come: the success stories highlight and the news strip.
+// Also "Explore our courses" (Learning API), the success stories highlight and the news strip (CMS feeds).
 const read = (path, locale) => readService('cms', pagePath(path, locale)).then(cleanPage).catch(() => null);
+
+// Only the fields the blocks show go to the browser.
+const storyCard = ({ path, author, description, featuredImageUrl }) => ({ path, author: author ?? null, description: description ?? null, featuredImageUrl: featuredImageUrl ?? null });
+const newsCard = ({ path, heading, publishDate, description, featuredImageUrl }) => ({ path, heading: heading ?? '', publishDate: publishDate ?? null, description: description ?? null, featuredImageUrl: featuredImageUrl ?? null });
 
 export async function getServerSideProps({ query, res }) {
   const locale = resolveLocale(query.lang);
@@ -28,14 +34,16 @@ export async function getServerSideProps({ query, res }) {
     // One list of courses per category for the "Explore our courses" tabs. A category whose list fails just shows no courses.
     const categories = await readLearning(categoriesPath(locale)).then(list => (Array.isArray(list) ? list : []).map(categoryItem)).catch(() => []);
     const coursesByCategory = Object.fromEntries(await Promise.all(categories.map(async c => [c.id, await readLearning(coursesPath({ language: locale, categoryId: c.id, resultsPerPage: 25 })).then(r => (r.results || []).map(courseCard)).catch(() => [])])));
+    // Both feeds are optional: if one fails its block is left out and the rest of the page still shows.
+    const [stories, news] = await Promise.all([cmsFeeds.successStories, cmsFeeds.news].map(filter => readService('cms', feedPath(filter, locale)).then(r => r.results || []).catch(() => [])));
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners, categories, coursesByCategory } };
+    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners, categories, coursesByCategory, stories: stories.map(storyCard), news: news.slice(0, 4).map(newsCard) } };
   } catch (error) {
-    return { props: { locale, banners: [], about: null, statistics: null, partners: null, categories: [], coursesByCategory: {}, message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
+    return { props: { locale, banners: [], about: null, statistics: null, partners: null, categories: [], coursesByCategory: {}, stories: [], news: [], message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
   }
 }
 
-export default function Home({ locale, banners, about, statistics, partners, categories = [], coursesByCategory = {}, message }) {
+export default function Home({ locale, banners, about, statistics, partners, categories = [], coursesByCategory = {}, stories = [], news = [], message }) {
   const t = (section, key) => translate(locale, section, key);
   return <Layout locale={locale} title={about?.title || 'Free Courses with Online Certificates | HP LIFE'} description={about?.seo?.description} keywords={about?.seo?.keywords}>
     {message && <div className="wrapper"><p role="alert">{message}</p></div>}
@@ -52,6 +60,7 @@ export default function Home({ locale, banners, about, statistics, partners, cat
         <Button variant="containedPrimary" size="large" sx={{ alignSelf: 'center' }} href={`/allcourses?${locale === 'en' ? '' : `lang=${locale}&`}page=1`}>{t('HomePage', 'exploreAllCourses')}</Button>
       </div>
     </HomeSection>}
+    <HomeSuccessStories stories={stories} locale={locale} />
     {partners && <section style={{ padding: '75px 0' }}>
       <CmsContent page={partners} id="home-partners" />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -62,5 +71,6 @@ export default function Home({ locale, banners, about, statistics, partners, cat
       <Button variant="containedPrimary" href={`${connection.auth}/${locale}/signup`}>{t('HomePage', 'joinNow')}</Button>
       <Button variant="outlinedPrimary" href={`${connection.reference}/allcourses?page=1`}>{t('HomePage', 'exploreCourses')}</Button>
     </HighlightedSection>
+    <HomeNews news={news} locale={locale} />
   </Layout>;
 }
