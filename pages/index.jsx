@@ -13,6 +13,7 @@ import { translate } from '../platform/i18n';
 import { feedPath, pagePath, readService, ServiceError } from '../platform/server';
 import { categoriesPath, categoryItem, courseCard, coursesPath, readLearning } from '../platform/learning';
 import { cleanPage } from '../platform/sanitize';
+import { loadAlert } from '../platform/alerts';
 
 // Public home, built so far from the CMS only: campaign banners, "about us", statistics, partners, and "Start today".
 // Also "Explore our courses" (Learning API), the success stories highlight and the news strip (CMS feeds).
@@ -35,17 +36,18 @@ export async function getServerSideProps({ query, res }) {
     const categories = await readLearning(categoriesPath(locale)).then(list => (Array.isArray(list) ? list : []).map(categoryItem)).catch(() => []);
     const coursesByCategory = Object.fromEntries(await Promise.all(categories.map(async c => [c.id, await readLearning(coursesPath({ language: locale, categoryId: c.id, resultsPerPage: 25 })).then(r => (r.results || []).map(courseCard)).catch(() => [])])));
     // Both feeds are optional: if one fails its block is left out and the rest of the page still shows.
+    const alert = await loadAlert(locale);
     const [stories, news] = await Promise.all([cmsFeeds.successStories, cmsFeeds.news].map(filter => readService('cms', feedPath(filter, locale)).then(r => r.results || []).catch(() => [])));
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners, categories, coursesByCategory, stories: stories.map(storyCard), news: news.slice(0, 4).map(newsCard) } };
+    return { props: { locale, banners: loaded.filter(Boolean), about, statistics, partners, categories, coursesByCategory, stories: stories.map(storyCard), news: news.slice(0, 4).map(newsCard), alert } };
   } catch (error) {
-    return { props: { locale, banners: [], about: null, statistics: null, partners: null, categories: [], coursesByCategory: {}, stories: [], news: [], message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
+    return { props: { locale, banners: [], about: null, statistics: null, partners: null, categories: [], coursesByCategory: {}, stories: [], news: [], alert: null, message: error instanceof ServiceError ? error.message : 'The content service is unavailable. Please retry.' } };
   }
 }
 
-export default function Home({ locale, banners, about, statistics, partners, categories = [], coursesByCategory = {}, stories = [], news = [], message }) {
+export default function Home({ locale, banners, about, statistics, partners, categories = [], coursesByCategory = {}, stories = [], news = [], alert = null, message }) {
   const t = (section, key) => translate(locale, section, key);
-  return <Layout locale={locale} title={about?.title || 'Free Courses with Online Certificates | HP LIFE'} description={about?.seo?.description} keywords={about?.seo?.keywords}>
+  return <Layout locale={locale} alert={alert} title={about?.title || 'Free Courses with Online Certificates | HP LIFE'} description={about?.seo?.description} keywords={about?.seo?.keywords}>
     {message && <div className="wrapper"><p role="alert">{message}</p></div>}
     <BannerCarousel banners={banners} locale={locale} />
     {about && <HomeSection><CmsContent page={about} id="home-about" /></HomeSection>}

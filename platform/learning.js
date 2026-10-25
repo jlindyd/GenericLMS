@@ -33,3 +33,41 @@ export const readLearning = path => readService('learning', path);
 // What the pages need from a course list row, nothing more (rows go to the browser as page data).
 export const courseCard = c => ({ id: c.id, name: c.name ?? '', description: c.description ?? null, imageUrl: c.imageUrl ?? null, categoryId: c.categoryId ?? null, traineeCount: c.traineeCount ?? 0, offline: Array.isArray(c.books) && c.books.length > 0 });
 export const categoryItem = c => ({ id: c.id, name: c.name, imageUrl: c.imageUrl ?? null });
+
+// ---- Signed-in reads (need the visitor's token) ----
+// The existing site sends list filters the way qs.stringify does: courseStatus[0]=Draft&courseStatus[1]=Published...
+export const ACTIVE_COURSE_STATUSES = Object.freeze(['Draft', 'Published', 'Test']);
+// Lists of the visitor's courses. A value that is a list is sent as name[0]=..&name[1]=.., a single value as name=..
+const listQuery = ({ courseStatus = ACTIVE_COURSE_STATUSES, traineeStatus, search, page, resultsPerPage, type } = {}) => {
+  const params = [];
+  const add = (name, value) => { if (Array.isArray(value)) value.forEach((v, i) => params.push([`${name}[${i}]`, v])); else if (value !== undefined && value !== null && value !== '') params.push([name, String(value)]); };
+  add('search', search); add('page', page); add('resultsPerPage', resultsPerPage); add('type', type); add('courseStatus', courseStatus); add('traineeStatus', traineeStatus);
+  return new URLSearchParams(params).toString();
+};
+export const myTraineeCoursesPath = (options = {}) => `api/myTraineeCourses?${listQuery({ traineeStatus: ['inprogress', 'notstarted'], ...options })}`;
+export const myCoachCoursesPath = (options = {}) => `api/myCoachCourses?${listQuery(options)}`;
+
+// A course of the visitor's: what the cards show and decide on. Progress from "my courses" lists is 0..1 and shown as a percentage;
+// lists from the course search (latest courses) are used as the API sends them, as the existing site does.
+export const myCourseCard = c => ({
+  id: c.id, name: c.name ?? '', description: c.description ?? null, imageUrl: c.imageUrl ?? null, categoryId: c.categoryId ?? null, type: c.type ?? null,
+  startDate: c.startDate ?? null, finishDate: c.finishDate ?? null, progress: c.progress ? c.progress * 100 : (c.progress ?? 0),
+  hasCertificate: !!c.hasCertificate, certificateId: c.certificateId ?? null, status: c.status ?? null, enrollmentStatus: c.enrollmentStatus ?? null,
+  groupName: c.group?.name ?? null, offline: Array.isArray(c.books) && c.books.length > 0,
+  lastLessonId: c.lastLessonId ?? null, lastTaskId: c.lastTaskId ?? null, lastTaskType: c.lastTaskType ?? null,
+});
+export const latestCourseCard = c => ({ ...courseCard(c), progress: c.progress ?? 0, traineeEnrollmentStatus: c.traineeEnrollmentStatus ?? null, hasCertificate: !!c.hasCertificate, startDate: c.startDate ?? null, finishDate: c.finishDate ?? null, groupName: c.group?.name ?? null });
+
+// The status the card shows (the existing site's useCourseCardStatus / useCourseStatusBadge), for a signed-in visitor.
+export function cardStatus(course, { isCoach = false } = {}) {
+  if (isCoach) return 'coach';
+  const enrolled = (course.enrollmentStatus ?? course.traineeEnrollmentStatus) === 'Enrolled';
+  const progress = course.progress ?? 0;
+  if (enrolled) {
+    if (progress === 0) return 'notStarted';
+    if (progress === 100) return course.hasCertificate ? 'completedWithCertificate' : 'completedWithoutCertificate';
+    return 'inProgress';
+  }
+  if ((course.enrollmentStatus ?? course.traineeEnrollmentStatus) === 'Pending') return 'pending';
+  return 'canEnroll';
+}

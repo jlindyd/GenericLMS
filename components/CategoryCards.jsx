@@ -21,7 +21,7 @@ export default function CategoryCards({ categories, locale = 'en', gap = '0.5rem
   }, []);
   const lists = Array.from({ length: columns }, () => []);
   categories.forEach((category, i) => lists[i % columns].push(category));
-  return <div style={{ display: 'flex', gap, width: '100%', alignItems: 'flex-start', paddingBottom: 5 /* the existing masonry's height runs this far past its tallest column */ }}>
+  return <div style={{ display: 'flex', gap, width: '100%', alignItems: 'flex-start', paddingBottom: `calc(${gap} * 1.2)` /* the existing masonry's height runs this far past its tallest column */ }}>
     {lists.map((list, c) => <div key={c} style={{ display: 'flex', flexDirection: 'column', gap, flex: 1, minWidth: 0 }}>
       {list.map(category => <Card key={category.id}>
         <Thumb aria-hidden="true">{category.imageUrl && <img src={category.imageUrl} alt="" loading="lazy" />}</Thumb>

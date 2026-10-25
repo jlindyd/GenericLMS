@@ -10,19 +10,23 @@ import CmsContent from './CmsContent';
 // a play/pause button below. It slides on a loop every 4 seconds unless paused or the visitor prefers reduced motion;
 // slides that are out of view are hidden from keyboard and screen readers.
 // The band is as tall as the slide in view, so a short banner does not leave empty space below it on small screens.
-const Viewport = styled('div')({ backgroundColor: '#f3f3f3', overflow: 'clip', '@media (prefers-reduced-motion: no-preference)': { transition: 'height 300ms ease' } });
+const Viewport = styled('div', { shouldForwardProp: p => p !== 'after' })(({ after }) => ({ backgroundColor: after ? 'transparent' : '#f3f3f3', overflow: after ? 'hidden' : 'clip', '@media (prefers-reduced-motion: no-preference)': { transition: 'height 300ms ease' } }));
 const Track = styled('div')({ display: 'flex', alignItems: 'flex-start', transition: 'transform 450ms ease' });
-const Slide = styled('div')(({ theme }) => ({
-  flex: '0 0 100%', minWidth: 0, padding: '16px 16px 14px 16px',
-  '& > div': { display: 'flex', justifyContent: 'center' },
-  [theme.breakpoints.up('lg')]: { padding: '40px 40px 19px 40px' },
-  [theme.breakpoints.between('md', 'lg')]: { padding: '20px 20px 16px 20px' },
-}));
-const Controls = styled('div')(({ theme }) => ({
-  display: 'grid', justifyContent: 'center', gap: '1.2rem', paddingBottom: 14, backgroundColor: '#f3f3f3',
-  [theme.breakpoints.up('lg')]: { paddingBottom: 19 },
-  [theme.breakpoints.between('md', 'lg')]: { paddingBottom: 16 },
-}));
+const Slide = styled('div', { shouldForwardProp: p => p !== 'after' })(({ theme, after }) => after
+  ? { flex: '0 0 100%', minWidth: 0, display: 'flex', justifyContent: 'center', overflow: 'hidden', '& > div': { width: '100%', display: 'flex', justifyContent: 'center' } }
+  : {
+    flex: '0 0 100%', minWidth: 0, padding: '16px 16px 14px 16px',
+    '& > div': { display: 'flex', justifyContent: 'center' },
+    [theme.breakpoints.up('lg')]: { padding: '40px 40px 19px 40px' },
+    [theme.breakpoints.between('md', 'lg')]: { padding: '20px 20px 16px 20px' },
+  });
+const Controls = styled('div', { shouldForwardProp: p => p !== 'after' })(({ theme, after }) => after
+  ? { display: 'grid', justifyContent: 'center', gap: '1.2rem', padding: '10px 0', [theme.breakpoints.up('xl')]: { padding: '20px 0' } }
+  : {
+    display: 'grid', justifyContent: 'center', gap: '1.2rem', paddingBottom: 14, backgroundColor: '#f3f3f3',
+    [theme.breakpoints.up('lg')]: { paddingBottom: 19 },
+    [theme.breakpoints.between('md', 'lg')]: { paddingBottom: 16 },
+  });
 const Dots = styled('div')({ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 8 });
 const Dot = styled('button', { shouldForwardProp: p => p !== 'isSelected' })(({ isSelected }) => ({
   appearance: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid #808080', padding: 0, margin: 0,
@@ -37,7 +41,8 @@ const PlayPause = styled('button')(({ theme }) => ({
   '& svg': { fontSize: '1.25rem' },
 }));
 
-export default function BannerCarousel({ banners, locale = 'en' }) {
+// after: the signed-in home's news banners (no grey band or padding, 6 second slides) instead of the public home's campaign banners.
+export default function BannerCarousel({ banners, locale = 'en', after = false, label = 'Campaigns' }) {
   const [index, setIndex] = useState(0), [playing, setPlaying] = useState(true);
   const many = banners.length > 1;
   const slides = useRef([]), [height, setHeight] = useState(null);
@@ -61,15 +66,15 @@ export default function BannerCarousel({ banners, locale = 'en' }) {
   const rtl = directionOf(locale) === 'rtl';
   // A visitor who picks a slide takes control, as with the existing site's autoplay.
   const choose = i => { setPlaying(false); setIndex(i); };
-  return <section dir={rtl ? 'rtl' : 'ltr'} aria-roledescription="carousel" aria-label="Campaigns">
-    <Viewport style={height ? { height } : undefined}>
+  return <section dir={rtl ? 'rtl' : 'ltr'} aria-roledescription="carousel" aria-label={label}>
+    <Viewport after={after ? 1 : undefined} style={height ? { height } : undefined}>
       <Track style={{ transform: `translateX(${(rtl ? 1 : -1) * index * 100}%)` }} aria-live={playing ? 'off' : 'polite'}>
-        {banners.map((banner, i) => <Slide key={banner.path} ref={el => { slides.current[i] = el; }} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${banners.length}`} aria-hidden={i !== index || undefined} inert={i !== index}>
+        {banners.map((banner, i) => <Slide after={after ? 1 : undefined} key={banner.path} ref={el => { slides.current[i] = el; }} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${banners.length}`} aria-hidden={i !== index || undefined} inert={i !== index}>
           <CmsContent page={banner} id={banner.path} />
         </Slide>)}
       </Track>
     </Viewport>
-    {many && <Controls>
+    {many && <Controls after={after ? 1 : undefined}>
       <Dots>{banners.map((banner, i) => <Dot key={banner.path} type="button" isSelected={i === index} onClick={() => choose(i)} aria-label={`${i + 1} / ${banners.length}`} aria-current={i === index || undefined} />)}</Dots>
       <PlayPause type="button" onClick={() => setPlaying(p => !p)} aria-label={playing ? common('pauseCarousel') : common('playCarousel')}>{playing ? <Pause aria-hidden="true" /> : <PlayArrow aria-hidden="true" />}</PlayPause>
     </Controls>}

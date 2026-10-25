@@ -4,7 +4,7 @@ import { NavigateBefore, NavigateNext } from '@mui/icons-material';
 
 // Cards in a row you can scroll: three across on wide screens, two on tablets, one on phones, with previous and next arrows.
 // The two existing carousels differ only in their gutters (course page: 25px/35px, "Explore our courses": 30px/37px at wide widths).
-const gutters = { course: { lg: [-25, 35] }, explore: { lg: [-30, 37] } };
+const gutters = { course: { lg: [-25, 35] }, explore: { lg: [-30, 37] }, latest: { lg: [-22, 37] } };
 
 export default function CardCarousel({ children, variant = 'course', label = '' }) {
   const track = useRef(null);

@@ -1,17 +1,11 @@
 import { useState } from 'react';
-import { Box, styled } from '@mui/material';
+import { Box } from '@mui/material';
+import { PillLabel as Label } from './PillLabel';
 import CardCarousel from './CardCarousel';
 import CourseCard from './CourseCard';
 
 // "Explore our courses" on the home page: one button per category (native radio buttons, so arrow keys work) and the
 // courses of the chosen category in a carousel. Ported from the existing site's CoursesExplore and StyledRadioLabel.
-const Label = styled('label', { shouldForwardProp: p => p !== 'selected' })(({ selected }) => ({
-  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 16px', borderRadius: 12, fontSize: '1.6rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', height: 32, textTransform: 'none',
-  backgroundColor: selected ? '#000000' : 'transparent', color: selected ? '#ffffff' : '#000000', boxShadow: selected ? 'none' : '0 0 0 1px #000000 inset',
-  '&:hover': { backgroundColor: selected ? '#212121' : '#F3F3F3', color: selected ? '#ffffff' : '#212121', boxShadow: selected ? 'none' : '0 0 0 1px #212121 inset' },
-  '&:has(input:focus-visible)': { outline: '2px solid var(--focus-outline-color)', outlineOffset: 2 },
-  '& input': { position: 'absolute', opacity: 0, width: 0, height: 0 },
-}));
 
 export default function ExploreCourses({ categories, coursesByCategory, locale = 'en' }) {
   const [index, setIndex] = useState(0);

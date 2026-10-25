@@ -2,6 +2,7 @@ import { Box, Stack, styled, Typography } from '@mui/material';
 import { CloudDownload, Groups } from '@mui/icons-material';
 import { fill, translate, translateCount } from '../platform/i18n';
 import { slugFromIdAndName } from '../platform/learning';
+import { CourseDates, StatusBadge } from './CourseParts';
 
 // Search results do not show the "Available offline" row on the existing site, hence showOffline.
 // Course card as on the existing site (CourseCard compound, LatestCourseCard and ExploreCourseCard), vertical variant.
@@ -17,11 +18,11 @@ const Metadata = styled('div')({ display: 'flex', flexDirection: 'column', gap: 
 // The whole card is one link ("stretched link"), so the title, image and button all open the course.
 const Learn = styled('a')(({ theme }) => ({ color: 'var(--link-color)', textDecoration: 'underline', '&::after': { content: '""', position: 'absolute', inset: 0 }, '&:focus-visible': { outline: '2px solid var(--focus-outline-color)', outlineOffset: -2, borderRadius: 12 } }));
 
-export default function CourseCard({ course, categories = [], locale = 'en', showOffline = true }) {
+export default function CourseCard({ course, categories = [], locale = 'en', showOffline = true, signedIn = false }) {
   const category = categories.find(c => c.id === course.categoryId)?.name;
   const href = `/course/${slugFromIdAndName(course.id, course.name)}${locale === 'en' ? '' : `?lang=${locale}`}`;
   return <Card>
-    <Image><div>{course.imageUrl && <img src={course.imageUrl} alt="" loading="lazy" />}</div></Image>
+    <Image><div>{course.imageUrl && <img src={course.imageUrl} alt="" loading="lazy" />}</div>{signedIn && <div style={{ position: 'absolute', bottom: -10, insetInlineEnd: 0, zIndex: 1, width: 'auto', height: 'auto', overflow: 'visible', background: 'none' }}><StatusBadge course={course} locale={locale} /></div>}</Image>
     <Title>{course.name}</Title>
     <Stack sx={{ flex: 1 }} justifyContent="space-between">
       <Metadata>
@@ -32,6 +33,7 @@ export default function CourseCard({ course, categories = [], locale = 'en', sho
         {!!course.traineeCount && <Stack direction="row" alignItems="center" gap={3}><Groups fontSize="large" /><Typography>{translateCount(locale, 'CoursePage', 'studentsEnrolled', course.traineeCount)}</Typography></Stack>}
         {course.description && <Typography>{course.description}</Typography>}
       </Metadata>
+      {signedIn && <CourseDates startDate={course.startDate} finishDate={course.finishDate} locale={locale} />}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, mt: 'auto' }}>
         <Learn href={href} aria-label={fill(translate(locale, 'HomePage', 'learnMoreAbout', 'Learn more about {name}'), { name: course.name })}>{translate(locale, 'common', 'learnMore', 'Learn more')}</Learn>
       </Box>
