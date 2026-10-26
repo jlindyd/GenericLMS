@@ -61,6 +61,7 @@ export const isSignInRequired = error => error instanceof ServiceError && error.
 // visitor's own token, and only from this site's own pages (the Origin header must match the host when a browser sends one).
 const isId = value => /^[0-9]+$/.test(value);
 const allowedChanges = [
+  ['learning', 'POST', path => /^api\/trainee\/content\/[1-9][0-9]*\/validate$/.test(path)],
   ['notifications', 'POST', path => path.startsWith('Notifications/') && path.endsWith('/read') && isId(path.slice(14, -5))],
   ['notifications', 'DELETE', path => path === 'Notifications' || (path.startsWith('Notifications/') && isId(path.slice(14)))],
   ['identity', 'PUT', path => path === 'api/account/profile'], ['identity', 'POST', path => path === 'api/account/changepassword'], ['identity', 'POST', path => path === 'api/account/setPassword'],

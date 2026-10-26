@@ -3,6 +3,7 @@ import { connection } from '../platform/config';
 import { formatShortDate } from '../platform/dates';
 import { cardStatus, slugFromIdAndName } from '../platform/learning';
 import { translate } from '../platform/i18n';
+import { executionEnabled, taskHref } from '../platform/execution';
 
 // Pieces shared by the signed-in course cards, ported from the existing site's CourseCard parts:
 // start/finish dates, the progress bar, the status badge and the buttons that depend on the course status.
@@ -38,20 +39,20 @@ export function StatusBadge({ course, locale = 'en' }) {
   return <Chip label={label} sx={{ fontSize: 12, color: '#000', borderRadius: '6px', backgroundColor: status === 'inProgress' ? '#fdff6e' : '#87be63', boxShadow: '0px 2px 3px 0px #00000033', padding: '7px 10px', '& .MuiChip-label': { padding: 0 } }} />;
 }
 
-// Where "Start" and "Continue" lead. Course execution is not part of this site yet, so they go to the same addresses the existing
-// site uses on its own host; when execution is merged here, change this one function.
-export const executionHref = (courseId, lessonId, taskId, taskType) => lessonId && taskId && taskType ? `${connection.reference}/trainee/courses/${courseId}/lessons/${lessonId}/tasks/${taskId}/${String(taskType).toLowerCase()}` : null;
+// Content execution is opt-in during migration. Other types retain the old player.
+export const executionHref = (courseId, lessonId, taskId, taskType, locale = 'en') => lessonId && taskId && taskType ? taskHref(courseId, lessonId, taskId, taskType, locale) : null;
 
 // The buttons of a course card for a signed-in visitor: [{ label, href, variant }]. Certificates download through this site (see /api/certificate).
 export function cardActions(course, locale = 'en') {
   const t = key => translate(locale, 'CourseCard', key);
   const courseHref = `/course/${encodeURIComponent(slugFromIdAndName(course.id, course.name))}${locale === 'en' ? '' : `?lang=${locale}`}`;
   const status = cardStatus(course);
+  const startHref = executionEnabled && course.type === 'SelfPaced' ? `/trainee/courses/${course.id}?lang=${locale}` : courseHref;
   const certificate = course.certificateId ? [{ label: t('downloadCertificate'), href: `/api/certificate/${course.certificateId}?name=${encodeURIComponent(course.name)}`, variant: 'containedPrimary', download: true }, { label: t('shareCertificate'), share: `${connection.reference}/certificate/${course.certificateId}`, variant: 'outlined' }] : [];
   if (course.status === 'Archived') return status === 'completedWithCertificate' ? certificate : [];
   switch (status) {
-    case 'notStarted': return [{ label: t('startLesson'), href: executionHref(course.id, course.lastLessonId, course.lastTaskId, course.lastTaskType) || courseHref, variant: 'containedPrimary' }];
-    case 'inProgress': return [{ label: t('continueLesson'), href: executionHref(course.id, course.lastLessonId, course.lastTaskId, course.lastTaskType) || courseHref, variant: 'containedPrimary' }];
+    case 'notStarted': return [{ label: t('startLesson'), href: executionHref(course.id, course.lastLessonId, course.lastTaskId, course.lastTaskType, locale) || startHref, variant: 'containedPrimary' }];
+    case 'inProgress': return [{ label: t('continueLesson'), href: executionHref(course.id, course.lastLessonId, course.lastTaskId, course.lastTaskType, locale) || startHref, variant: 'containedPrimary' }];
     case 'completedWithCertificate': return certificate;
     case 'completedWithoutCertificate': return [{ label: t('viewCourse'), href: courseHref, variant: 'containedPrimary' }];
     default: return [];
