@@ -11,7 +11,9 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
   const task = { id: 3, status: 'InProgress', url: 'https://review.blob.core.windows.net/course/package/scormdriver/index.html?sig=example', scormSupportEnabled: true };
   const reads = [], writes = [];
   const read = async (token, service, path) => { reads.push(path); return path.includes('/courses/') ? course : task; };
-  const session = { readAs: read, cookieNames: { access: 'dydBearer' }, isSameOrigin: req => !req.headers.origin || req.headers.origin === 'https://learner.test' };
+  const fixtureModule = load('platform/fixtures.js', { './server.js': server });
+  const realSession = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtureModule });
+  const session = { ...realSession, readAs: read, isSameOrigin: req => !req.headers.origin || req.headers.origin === 'https://learner.test' };
   const execution = load('platform/execution.js', { './config.js': config, './server.js': server, './session.js': session });
   assert.equal((await execution.loadActivityExecution('session', 1, 2, 3)).legacy, false);
   await assert.rejects(() => execution.loadActivityExecution('session', 1, 99, 3), /does not belong/);
@@ -22,7 +24,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
   const resumedCourse = structuredClone(course); resumedCourse.lessons[0].tasks[0].status = 'Completed'; resumedCourse.lessons[0].tasks.push({ id: 4, type: 'Content', status: 'NotStarted' });
   const start = load('pages/trainee/courses/[courseId]/index.jsx', {
     '../../../../platform/config': config,
-    '../../../../platform/session': { ...session, requireSession: async () => ({ token: 'session' }), readAs: async () => resumedCourse },
+    '../../../../platform/session': { ...session, withSessionRecovery: async (context, operation) => operation('session'), readAs: async () => resumedCourse },
     '../../../../platform/execution': execution,
   });
   assert.equal((await start.getServerSideProps({ query: {}, params: { courseId: '1' }, req: { cookies: {} }, res: { setHeader() {} } })).redirect.destination, '/trainee/courses/1/lessons/2/tasks/4/content');
@@ -44,7 +46,13 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
     '../../../../../../../platform/activity': activity,
   }).default;
   const savedFetch = global.fetch;
-  global.fetch = async (url, init) => { writes.push({ url, init }); return new Response(init.method === 'GET' ? '<html>package</html>' : null, { status: init.method === 'GET' ? 200 : 204, headers: { 'Content-Type': 'text/html' } }); };
+  let rejectOnce = false;
+  global.fetch = async (url, init) => {
+    writes.push({ url, init });
+    if (url.endsWith('/api/refresh')) return new Response('{}', { status: 200, headers: { 'Set-Cookie': 'dydBearer=renewed-activity; Path=/; Secure' } });
+    if (rejectOnce && url.includes('/xApiActivity/')) { rejectOnce = false; return new Response(null, { status: 401 }); }
+    return new Response(init.method === 'GET' ? '<html>package</html>' : null, { status: init.method === 'GET' ? 200 : 204, headers: { 'Content-Type': 'text/html' } });
+  };
   async function run({ method = 'GET', path = ['status'], body = '', cookies = { dydBearer: 'session' }, headers = {}, query = {} } = {}) {
     const req = Readable.from([Buffer.from(body)]); Object.assign(req, { method, headers, cookies, query: { courseId: '1', lessonId: '2', taskId: '3', path, ...query } });
     const res = new PassThrough(); res.statusCode = 200; const chunks = []; res.on('data', chunk => chunks.push(chunk));
@@ -66,6 +74,12 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
     assert.equal((await run({ query: { lessonId: '99' } })).status, 404);
     assert.equal((await run({ method: 'POST', path: ['assets', 'file'] })).status, 405);
     assert.equal(writes.length, before);
+    rejectOnce = true;
+    const replayBefore = writes.length;
+    assert.equal((await run({ method: 'PUT', path: ['xapi', 'activities', 'state'], query: { stateId: 'resume' }, cookies: { dydBearer: 'rejected-activity', dydBearerRefresh: 'activity-refresh' }, body: rawState, headers: { 'content-type': 'application/json' } })).status, 204);
+    const replay = writes.slice(replayBefore).filter(write => write.url.includes('/xApiActivity/'));
+    assert.equal(replay.length, 2); assert.equal(replay[0].init.body.toString(), rawState); assert.equal(replay[1].init.body.toString(), rawState);
+    assert.equal(replay[1].init.headers.Authorization, 'Bearer renewed-activity');
   } finally { global.fetch = savedFetch; }
   const { createScormApi } = load('platform/scorm.js');
   const requests = [], errors = []; let reject = false;

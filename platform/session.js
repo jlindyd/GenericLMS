@@ -36,17 +36,71 @@ export function signInRedirect(resolvedUrl, locale) {
   return { redirect: { destination: `${connection.auth}/api/logout?${params}`, permanent: false } };
 }
 
+// JWT expiry is only a renewal hint. The APIs still verify the token and permissions.
+export function tokenNeedsRenewal(token, now = Date.now(), margin = 30000) {
+  try {
+    const payload = JSON.parse(Buffer.from(String(token).split('.')[1], 'base64url').toString('utf8'));
+    return typeof payload.exp === 'number' && payload.exp * 1000 <= now + margin;
+  } catch { return false; }
+}
+const renewals = new Map();
+export async function sessionToken(req, res, { fetcher, force = false, now = Date.now() } = {}) {
+  const access = req.cookies?.[cookieNames.access];
+  if (access && !force && !tokenNeedsRenewal(access, now)) return access;
+  const refresh = req.cookies?.[cookieNames.refresh];
+  let lines = null;
+  if (refresh) {
+    // Parallel activity assets must not rotate the same refresh token independently.
+    if (!renewals.has(refresh)) {
+      const pending = refreshSession(refresh, { fetcher });
+      renewals.set(refresh, pending);
+      void pending.finally(() => { const timer = setTimeout(() => renewals.delete(refresh), 5000); timer.unref?.(); });
+    }
+    lines = await renewals.get(refresh);
+  }
+  const fresh = lines && cookiesFromSetCookie(lines)[cookieNames.access];
+  if (fresh) {
+    const existing = res.getHeader?.('Set-Cookie');
+    res.setHeader('Set-Cookie', [...(Array.isArray(existing) ? existing : existing ? [existing] : []), ...lines]);
+    if (req.cookies) Object.assign(req.cookies, cookiesFromSetCookie(lines));
+    return fresh;
+  }
+  // A temporary renewal failure must not discard an access token that is still valid.
+  return access && !force && !tokenNeedsRenewal(access, now, 0) ? access : null;
+}
+
+export async function withSessionRecovery(context, operation, options = {}) {
+  let token = await sessionToken(context.req, context.res, options);
+  const locale = resolveLocale(context.query?.lang || context.req.cookies?.NEXT_LOCALE);
+  if (!token) return signInRedirect(context.resolvedUrl, locale);
+  try { return await operation(token); }
+  catch (error) {
+    if (!isSignInRequired(error)) throw error;
+    token = await sessionToken(context.req, context.res, { ...options, force: true });
+    if (!token) return signInRedirect(context.resolvedUrl, locale);
+    try { return await operation(token); }
+    catch (retryError) { if (isSignInRequired(retryError)) return signInRedirect(context.resolvedUrl, locale); throw retryError; }
+  }
+}
+
+export async function withApiSession(req, res, operation, options = {}) {
+  let token = await sessionToken(req, res, options);
+  if (!token) throw new ServiceError('Sign in to continue.', 401);
+  try { return await operation(token); }
+  catch (error) {
+    if (!isSignInRequired(error)) throw error;
+    token = await sessionToken(req, res, { ...options, force: true });
+    if (!token) throw error;
+    return operation(token); // Exactly one retry, and only after an explicit 401.
+  }
+}
+
 // For getServerSideProps of pages that need a signed-in visitor: resolves to { token } or { redirect }.
-export async function requireSession(context, { fetcher } = {}) {
+export async function requireSession(context, options = {}) {
   const { req, res, resolvedUrl } = context;
   const locale = (Array.isArray(context.query?.lang) ? context.query.lang[0] : context.query?.lang) || req.cookies?.NEXT_LOCALE;
-  const access = req.cookies?.[cookieNames.access];
-  if (access) return { token: access };
-  const lines = await refreshSession(req.cookies?.[cookieNames.refresh], { fetcher });
-  if (lines) {
-    const fresh = cookiesFromSetCookie(lines)[cookieNames.access];
-    if (fresh) { res.setHeader('Set-Cookie', lines); return { token: fresh }; }
-  }
+  const token = await sessionToken(req, res, options);
+  if (token) return { token };
   return signInRedirect(resolvedUrl, locale);
 }
 

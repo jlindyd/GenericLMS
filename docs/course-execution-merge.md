@@ -40,3 +40,21 @@ Vimeo video; editable forms, surveys and quizzes with distinct rules; assignment
 `npm test` covers existing site behavior plus execution links, invalid IDs, course/task relationships, locked tasks, self-paced filtering, interactive fallback, auto-validation progress reads, exact completion/video/xAPI contracts, safe package paths/hosts, raw state forwarding, session guards, SCORM resume, score, failed-save retry and unload persistence. All execution writes are mocked in tests.
 
 Shared-session preparation: the live HP LIFE Test dashboard was accessible using its existing session. A compatible hostname pointing to GenericLMS is still required before that session can reach the local app. No session token was copied across origins and no separate login was added. Do not treat the configurable return URL as completing DNS, HTTPS, hosting, or real learner execution verification.
+
+## Silent renewal and local HTTPS
+
+`requireSession` now renews expiring JWT access cookies through the existing portal refresh endpoint. Execution pages and execution API routes also retry once after an upstream 401, forwarding both rotated cookies to the browser. A 403 is never treated as expiry. Parallel requests share renewal attempts briefly to avoid rotating the same refresh token repeatedly. Activity write retries retain the original raw request body. Failed renewal still requires the normal portal login; these helpers cannot transfer cookies from the HP LIFE domain to localhost.
+
+For this Windows development machine, `scripts/setup-local-https.ps1` prepares `generic-local.hplife-test.dyd.solutions` as a loopback-only hostname. It needs an Administrator PowerShell window because Windows protects the hosts file:
+
+```powershell
+& 'C:\DYD\DYDLMS\GenericLMS\scripts\setup-local-https.ps1'
+```
+
+The script adds only that hosts entry, creates and trusts a six-month endpoint certificate in the current user's certificate store (not a general-purpose CA), and writes the local canonical origin to ignored `.env.local`. Private certificate files stay in ignored `.local-https`. No remote DNS or deployment changes are made. It intentionally does not enable course rollout.
+
+After setup, rebuild and run GenericLMS on port 3020, and run `npm run local:https` to serve it on HTTPS port 443. Check the existing session with `/api/account` at the new hostname before entering a task. Do not visit a protected page at `127.0.0.1` expecting the remote session to follow. Restarting the browser may be necessary after trusting the certificate. If port 443 is occupied, resolve that conflict before starting the local proxy.
+
+To undo the machine setup, remove the single hosts entry marked `GenericLMS local HTTPS`, remove the certificate named `GenericLMS local HTTPS only` from the current user's Personal and Trusted Root stores, stop the proxy, and remove the origin override from `.env.local`. The original hosts backup is saved for reference; do not overwrite unrelated later hosts edits with that backup.
+
+Current verification: automated renewal and request replay tests pass; local HTTPS activation and real shared-cookie verification remain pending an Administrator setup run.

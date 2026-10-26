@@ -2,6 +2,7 @@
   "name": "generic-lms",
   "private": true,
   "scripts": {
+    "local:https": "node scripts/local-https.cjs",
     "dev": "next dev -H 127.0.0.1 -p 3020",
     "build": "next build",
     "start": "next start -H 127.0.0.1 -p 3020",

@@ -35,7 +35,7 @@ function load(file, reqs = {}) {
   const refreshed = await session.requireSession({ req: { cookies: { dydBearerRefresh: 'r1' } }, res, resolvedUrl: '/', query: {} }, { fetcher });
   assert.deepEqual(refreshed, { token: 'fresh' }); assert.equal(calls[0][0], 'https://auth.hplife-test.dyd.solutions/api/refresh'); assert.equal(calls[0][1].method, 'POST'); assert.equal(calls[0][1].headers.Cookie, 'dydBearerRefresh=r1');
   assert.equal(res.headers['Set-Cookie'].length, 2);
-  const failing = await session.requireSession({ req: { cookies: { dydBearerRefresh: 'r1' } }, res, resolvedUrl: '/dashboard', query: { lang: 'es' } }, { fetcher: async () => ({ ok: false, headers: { getSetCookie: () => [] } }) });
+  const failing = await session.requireSession({ req: { cookies: { dydBearerRefresh: 'failed-refresh' } }, res, resolvedUrl: '/dashboard', query: { lang: 'es' } }, { fetcher: async () => ({ ok: false, headers: { getSetCookie: () => [] } }) });
   assert.ok(failing.redirect.destination.includes('/api/logout')); assert.ok(failing.redirect.destination.includes('locale=es'));
   assert.ok((await session.requireSession({ req: { cookies: {} }, res, resolvedUrl: '/', query: {} })).redirect);
 

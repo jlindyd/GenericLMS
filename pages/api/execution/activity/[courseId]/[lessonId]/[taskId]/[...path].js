@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import { connection } from '../../../../../../../platform/config';
 import { noStore, serviceFailure, ServiceError } from '../../../../../../../platform/server';
-import { cookieNames, isSameOrigin, readAs } from '../../../../../../../platform/session';
+import { withApiSession, isSameOrigin } from '../../../../../../../platform/session';
 import { loadActivityExecution } from '../../../../../../../platform/execution';
 import { packageResource, xapiResource } from '../../../../../../../platform/activity';
 
@@ -18,13 +18,14 @@ async function requestBody(req) {
 export default async function handler(req, res) {
   noStore(res);
   if (!isSameOrigin(req)) return res.status(403).json({ message: 'Not allowed.' });
-  const token = req.cookies?.[cookieNames.access];
-  if (!token) return res.status(401).json({ message: 'Sign in to continue.' });
   const controller = new AbortController();
   const abort = () => controller.abort();
   res.once('close', abort);
   const timeout = setTimeout(abort, 90000);
   try {
+    // Retain the raw body once so an authenticated 401 retry can replay it intact.
+    let requestBytes;
+    await withApiSession(req, res, async token => {
     const { courseId, lessonId, taskId, path } = req.query;
     const data = await loadActivityExecution(token, courseId, lessonId, taskId);
     if (data.legacy) throw new ServiceError('This task is not a self-paced activity.', 409);
@@ -40,11 +41,13 @@ export default async function handler(req, res) {
       headers = { Authorization: `Bearer ${token}`, 'Client-Id': connection.clientId, 'X-Experience-API-Version': req.headers['x-experience-api-version'] || '1.0.3' };
       for (const name of ['if-match', 'if-none-match']) if (req.headers[name]) headers[name] = req.headers[name];
       if (['POST', 'PUT'].includes(req.method)) {
-        body = await requestBody(req);
+        requestBytes ??= await requestBody(req);
+        body = requestBytes;
         headers['Content-Type'] = req.headers['content-type'] || 'application/json';
       }
     } else throw new ServiceError('Unknown activity request.', 404);
     const upstream = await fetch(url, { method: req.method, headers, body, cache: 'no-store', redirect: 'error', signal: controller.signal });
+    if (upstream.status === 401 && path[0] === 'xapi') { await upstream.body?.cancel(); throw new ServiceError('Sign in to continue.', 401); }
     for (const name of ['Content-Type', 'ETag', 'Last-Modified', 'Content-Range', 'Accept-Ranges']) {
       const value = upstream.headers.get(name); if (value) res.setHeader(name, value);
     }
@@ -53,6 +56,7 @@ export default async function handler(req, res) {
     await new Promise((resolve, reject) => {
       const stream = Readable.fromWeb(upstream.body);
       stream.once('error', reject); res.once('finish', resolve); res.once('close', resolve); stream.pipe(res);
+    });
     });
   } catch (error) {
     if (res.destroyed || res.writableEnded) return;
