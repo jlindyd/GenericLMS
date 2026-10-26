@@ -2,7 +2,7 @@ const fs = require('fs'), assert = require('node:assert/strict'), ts = require('
 function load(file, imports = {}) { const m = { exports: {} }; new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(__dirname + '/' + file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText)(n => imports[n] || require(n), m, m.exports); return m.exports; }
 (async () => {
   const config = load('platform/config.js'), server = load('platform/server.js', { './config.js': config });
-  const fixtures = load('platform/fixtures.js', { './server.js': server });
+  const fixtures = load('platform/fixtures.js', { './server.js': server, './fixture-forms.js': load('platform/fixture-forms.js') });
   const session = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtures });
   const execution = load('platform/execution.js', { './config.js': config, './server.js': server, './session.js': session });
   const course = { id: 1, type: 'SelfPaced', progress: 0.2, lessons: [{ id: 2, tasks: [{ id: 3, type: 'Video', isEnabled: true }] }] };

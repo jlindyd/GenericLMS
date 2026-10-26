@@ -11,7 +11,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
   const task = { id: 3, status: 'InProgress', url: 'https://review.blob.core.windows.net/course/package/scormdriver/index.html?sig=example', scormSupportEnabled: true };
   const reads = [], writes = [];
   const read = async (token, service, path) => { reads.push(path); return path.includes('/courses/') ? course : task; };
-  const fixtureModule = load('platform/fixtures.js', { './server.js': server });
+  const fixtureModule = load('platform/fixtures.js', { './server.js': server, './fixture-forms.js': load('platform/fixture-forms.js') });
   const realSession = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtureModule });
   const session = { ...realSession, readAs: read, isSameOrigin: req => !req.headers.origin || req.headers.origin === 'https://learner.test' };
   const execution = load('platform/execution.js', { './config.js': config, './server.js': server, './session.js': session });

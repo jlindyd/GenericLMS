@@ -1,6 +1,6 @@
 import { connection, learnerUrl, resolveLocale } from './config.js';
 import { readService, ServiceError } from './server.js';
-import { fixtureResponse, fixturesEnabled } from './fixtures.js';
+import { fixtureResponse, fixturesEnabled, recordFixtureChange } from './fixtures.js';
 
 // Signed-in visitors, the way the existing learner site knows them: the separate sign-in site sets two cookies on the shared
 // domain (an access token and a refresh token); this site only reads them, asks the sign-in site for a new access token when
@@ -117,6 +117,7 @@ const isId = value => /^[0-9]+$/.test(value);
 const allowedChanges = [
   ['learning', 'PUT', path => /^api\/trainee\/video\/[1-9][0-9]*\/progress$/.test(path)],
   ['learning', 'POST', path => /^api\/trainee\/content\/[1-9][0-9]*\/validate$/.test(path)],
+  ['learning', 'POST', path => /^api\/trainee\/form\/[1-9][0-9]*$/.test(path)],
   ['notifications', 'POST', path => path.startsWith('Notifications/') && path.endsWith('/read') && isId(path.slice(14, -5))],
   ['notifications', 'DELETE', path => path === 'Notifications' || (path.startsWith('Notifications/') && isId(path.slice(14)))],
   ['identity', 'PUT', path => path === 'api/account/profile'], ['identity', 'POST', path => path === 'api/account/changepassword'], ['identity', 'POST', path => path === 'api/account/setPassword'],
@@ -125,7 +126,7 @@ const allowedChanges = [
 export const isSameOrigin = req => { const origin = req.headers.origin; if (!origin) return true; try { return new URL(origin).host === req.headers.host; } catch { return false; } };
 export async function sendAs(token, service, path, method, { fetcher = fetch, body } = {}) {
   if (!allowedChanges.some(([s, m, allowed]) => s === service && m === method && allowed(String(path))) || !connection[service]) throw new ServiceError('Invalid service request.', 400);
-  if (fixturesEnabled(token) && service !== 'notifications') return; // review mode: nothing is sent anywhere
+  if (fixturesEnabled(token) && service !== 'notifications') { recordFixtureChange(service, path, method, body); return; } // review mode: nothing is sent anywhere
   const response = await fetcher(`${connection[service]}/${path}`, { method, cache: 'no-store', signal: AbortSignal.timeout(20000),
     headers: { 'Client-Id': connection.clientId, Authorization: `Bearer ${token}`, ...(body === undefined ? { 'Content-Length': '0' } : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   if (!response.ok) {

@@ -1,4 +1,5 @@
 import { readService } from './server.js';
+import { fixtureCourse, fixtureForm, fixtureSubmit } from './fixture-forms.js';
 
 // Stand-in answers for the signed-in reads, used only when GENERIC_LMS_FIXTURES=1 and the access cookie is the word "fixture".
 // It lets the signed-in pages be built and compared on a computer that cannot receive the real sign-in cookie (it belongs to the
@@ -19,6 +20,8 @@ export async function fixtureResponse(service, path) {
     { id: null, name: 'Finance', description: 'Not earned yet.', imageUrl: null, issueDate: null },
   ];
   if (service !== 'learning') throw new Error('No fixture for this service.');
+  if (path === 'api/trainee/courses/1') return fixtureCourse();
+  if (/^api\/trainee\/form\/[0-9]+$/.test(path)) return fixtureForm(Number(path.split('/').pop()));
   const catalogue = await readService('learning', 'api/marketplace/courses?page=0&resultsPerPage=12&language=en');
   const courses = catalogue.results || [];
   if (path.startsWith('api/myTraineeCourses') && path.includes('Archived')) return { page: 0, pagesCount: 0, resultsCount: 0, results: [] };
@@ -33,4 +36,9 @@ export async function fixtureResponse(service, path) {
   if (path.startsWith('api/myCoachCourses')) return { page: 0, pagesCount: 1, resultsCount: 0, results: [] };
   if (path.startsWith('api/marketplace/courses')) return { ...catalogue, results: courses.slice(0, 10).map((c, i) => ({ ...c, traineeEnrollmentStatus: i % 3 === 0 ? 'Enrolled' : 'NotEnrolled', progress: i % 3 === 0 ? 0.5 : 0 })) };
   throw new Error('No fixture for this request.');
+}
+
+// In review mode a form task keeps the learner's answers in memory so a save or submit can be seen working.
+export function recordFixtureChange(service, path, method, body) {
+  if (service === 'learning' && method === 'POST' && /^api\/trainee\/form\/[0-9]+$/.test(path)) fixtureSubmit(Number(path.split('/').pop()), body);
 }

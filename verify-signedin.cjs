@@ -9,7 +9,7 @@ function load(file, reqs = {}) {
   delete process.env.NEXT_PUBLIC_APP_ENV; delete process.env.GENERIC_LMS_FIXTURES;
   const config = load('platform/config.js');
   const server = load('platform/server.js', { './config.js': config });
-  const fixtures = load('platform/fixtures.js', { './server.js': server });
+  const fixtures = load('platform/fixtures.js', { './server.js': server, './fixture-forms.js': load('platform/fixture-forms.js') });
   const session = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtures });
   const learning = load('platform/learning.js', { './config.js': config, './server.js': server });
   const dates = load('platform/dates.js');

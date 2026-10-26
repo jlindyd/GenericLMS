@@ -5,18 +5,19 @@ import { Alert, Box, Button, LinearProgress, List, ListItemButton, ListItemText,
 import Footer from './Footer';
 import ExecutionVideo from './ExecutionVideo';
 import ExecutionActivity from './ExecutionActivity';
+import ExecutionForm from './ExecutionForm';
 import { direction } from '../platform/config';
 import { canValidateContent, courseTasks, taskHref } from '../platform/execution';
 import labels from '../platform/execution-translations.json';
 
 // Execution has its own frame rather than the catalogue's search/navigation header.
 // Kept opt-in until the HP LIFE player has been compared on the test environment.
-export default function ExecutionPlayer({ locale = 'en', course: initialCourse, content: initialContent, video, activity, user, lessonId, taskId, error }) {
+export default function ExecutionPlayer({ locale = 'en', course: initialCourse, content: initialContent, video, activity, form, user, lessonId, taskId, error }) {
   const router = useRouter();
   const [updated, setUpdated] = useState(null);
   const snapshot = updated?.taskId === taskId ? updated : null;
   const course = snapshot ? { ...initialCourse, progress: snapshot.progress, lessons: snapshot.lessons } : initialCourse;
-  const interactive = video || activity;
+  const interactive = video || activity || form;
   const content = interactive ? { ...interactive, status: snapshot?.status || interactive.status } : initialContent;
   const [busy, setBusy] = useState(false), [failure, setFailure] = useState('');
   const t = key => labels[locale]?.[key] || labels.en[key] || key;
@@ -46,13 +47,13 @@ export default function ExecutionPlayer({ locale = 'en', course: initialCourse, 
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '300px minmax(0,1fr)' }, minHeight: '70vh' }}>
       <Box component="nav" aria-label={t('lessons')} sx={{ bgcolor: '#e4eaef', p: 2, maxHeight: { md: 'calc(100vh - 64px)' }, overflowY: 'auto' }}>
         <Typography fontSize={16} gutterBottom>{t('progressBarLabel')} {Math.round(progress)}%</Typography><LinearProgress variant="determinate" value={progress} sx={{ mb: 3 }} />
-        {(course.lessons || []).map(lesson => <Box key={lesson.id} sx={{ mb: 2 }}><Typography fontWeight="bold" fontSize={16}>{lesson.name}</Typography><List dense>{(lesson.tasks || []).map(task => <ListItemButton key={task.id} component="a" href={link({ lesson, task })} disabled={busy || lesson.isEnabled === false || task.isEnabled === false} selected={task.id === taskId && lesson.id === lessonId} aria-current={task.id === taskId && lesson.id === lessonId ? 'step' : undefined}><ListItemText primary={task.name} secondary={task.status} slotProps={{ primary: { fontSize: 15 }, secondary: { fontSize: 12 } }} /></ListItemButton>)}</List></Box>)}
+        {(course.lessons || []).map(lesson => <Box key={lesson.id} sx={{ mb: 2 }}><Typography fontWeight="bold" fontSize={16}>{lesson.name}</Typography><List dense>{(lesson.tasks || []).map(task => <ListItemButton key={task.id} component="a" href={link({ lesson, task })} disabled={busy || lesson.isEnabled === false || task.isEnabled === false} selected={task.id === taskId && lesson.id === lessonId} aria-current={task.id === taskId && lesson.id === lessonId ? 'step' : undefined}><ListItemText primary={task.name} secondary={task.status} slotProps={{ primary: { fontSize: 15 }, secondary: { fontSize: 12, color: '#4a5560' } }} /></ListItemButton>)}</List></Box>)}
       </Box>
       <Box component="main" id="execution-content" sx={{ p: { xs: 2, md: 4 }, minWidth: 0 }}>
         <Typography component="h1" sx={{ fontSize: 28, mb: 3 }}>{content.name}</Typography>
         {failure && <Alert severity="error" sx={{ mb: 2 }}>{failure}</Alert>}
-        {['Finished', 'Completed', 'Passed', 'WaitingForCoachApproval'].includes(content.status) && <Alert severity={content.status === 'WaitingForCoachApproval' ? 'info' : 'success'} sx={{ mb: 2 }}>{content.status === 'WaitingForCoachApproval' ? t('waiting') : t('completed')}</Alert>}
-        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fff', '& img, & video': { maxWidth: '100%', height: 'auto' } }}>{activity ? <ExecutionActivity key={taskId} activity={activity} user={user} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : video ? <ExecutionVideo key={taskId} video={video} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : <div className="editor-preview" dangerouslySetInnerHTML={{ __html: content.body }} />}</Paper>
+        {!form && ['Finished', 'Completed', 'Passed', 'WaitingForCoachApproval'].includes(content.status) && <Alert severity={content.status === 'WaitingForCoachApproval' ? 'info' : 'success'} sx={{ mb: 2 }}>{content.status === 'WaitingForCoachApproval' ? t('waiting') : t('completed')}</Alert>}
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fff', '& img, & video': { maxWidth: '100%', height: 'auto' } }}>{form ? <ExecutionForm key={taskId} form={form} course={course} lessonId={lessonId} taskId={taskId} locale={locale} onProgress={data => setUpdated({ ...data, taskId })} /> : activity ? <ExecutionActivity key={taskId} activity={activity} user={user} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : video ? <ExecutionVideo key={taskId} video={video} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : <div className="editor-preview" dangerouslySetInnerHTML={{ __html: content.body }} />}</Paper>
         <Stack direction="row" useFlexGap flexWrap="wrap" gap={2} sx={{ mt: 3, justifyContent: 'space-between' }}>
           {previous && <Button disabled={busy} href={link(previous)}>{t('prev')}</Button>}
           {!interactive && canValidateContent(content) && <Button variant="containedPrimary" disabled={busy} onClick={complete}>{busy ? '…' : t('submitBtn')}</Button>}

@@ -11,7 +11,7 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
     process.env.NEXT_PUBLIC_LEARNER_ORIGIN = 'https://generic-review.hplife-test.dyd.solutions';
     const config = load('platform/config.js');
     const server = load('platform/server.js', { './config.js': config });
-    const fixtures = load('platform/fixtures.js', { './server.js': server });
+    const fixtures = load('platform/fixtures.js', { './server.js': server, './fixture-forms.js': load('platform/fixture-forms.js') });
     const session = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtures });
     const path = '/trainee/courses/1/lessons/2/tasks/3/content?lang=ar';
     const destination = new URL(session.signInRedirect(path, 'ar').redirect.destination);
