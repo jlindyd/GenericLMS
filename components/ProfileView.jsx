@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Buttons, ButtonRow, Fieldset, Form, Frame, Group, Mandatory, PageTitle, TitleBox } from './ProfileParts';
-import { brand, connection } from '../platform/config';
+import { brand, connection, reviewMode } from '../platform/config';
 import { countries, languageNames } from '../platform/profile-lists';
 import { translate } from '../platform/i18n';
 
@@ -16,7 +16,7 @@ export default function ProfileView({ locale, profile, hasPassword }) {
   const genders = { Male: t('male'), Female: t('female'), PreferNotToAnswer: t('preferNotToAnswer') };
   const resend = async () => { setMail(''); try { const response = await fetch('/api/verify-email', { method: 'POST' }); setMail(response.ok ? 'sent' : 'error'); } catch { setMail('error'); } };
   const remove = async () => { setBusy(true); try { await fetch('/api/account', { method: 'DELETE' }); } catch { /* the existing site also carries on to the farewell message */ } setBusy(false); setConfirm(false); setDeleted(true); };
-  const signOut = () => window.location.assign(`${connection.auth}/api/logout?${new URLSearchParams({ continue: window.location.href, locale })}`);
+  const signOut = () => window.location.assign(reviewMode ? '/review-signout' : `${connection.auth}/api/logout?${new URLSearchParams({ continue: window.location.href, locale })}`);
   return <Frame>
     <div className="wrapper">
       <TitleBox><PageTitle>{t('myprofile')}</PageTitle></TitleBox>

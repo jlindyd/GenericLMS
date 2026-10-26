@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Button, IconButton, Menu, MenuItem, InputBase, useMediaQuery, useTheme } from '@mui/material';
 import { KeyboardArrowDown, Menu as MenuIcon, PhoneIphone, Search } from '@mui/icons-material';
-import { connection, learnerUrl, localeLabels, locales } from '../platform/config';
+import { connection, localeLabels, locales, signInHref, signUpHref } from '../platform/config';
 import { translate } from '../platform/i18n';
 import UserMenu, { UserAvatar, initialsOf, userMenuItems } from './UserMenu';
 import Bell from './Bell';
@@ -22,8 +22,8 @@ export default function Header({ locale = 'en' }) {
   const search = event => { event.preventDefault(); window.location.href = `/search?${locale === 'en' ? '' : `lang=${locale}&`}search=${encodeURIComponent(term)}&page=1`; };
   const switchLanguage = next => { setLangAnchor(null); router.push({ pathname: router.pathname, query: { ...router.query, lang: next } }); };
   const logo = <a href="/" aria-label={connection.name.replace(/ Test$/, '')} style={{ display: 'block' }}><img src="/brand/logo.svg" alt={connection.name.replace(/ Test$/, '')} width={86} height={48} /></a>;
-  const login = <Button variant="outlinedPrimary" href={`${connection.auth}/${locale}/login?continue=${encodeURIComponent(learnerUrl('/'))}`}>{t('loginBtn', 'Log in')}</Button>;
-  const join = <Button variant="containedPrimary" href={`${connection.auth}/${locale}/signup`}>{t('joinForFree', 'Join for free')}</Button>;
+  const login = <Button variant="outlinedPrimary" href={signInHref(locale, '/')}>{t('loginBtn', 'Log in')}</Button>;
+  const join = <Button variant="containedPrimary" href={signUpHref(locale)}>{t('joinForFree', 'Join for free')}</Button>;
   const languageButton = <>
     <Button variant="outlinedSecondary" onClick={event => setLangAnchor(event.currentTarget)} endIcon={<KeyboardArrowDown />} aria-haspopup="menu" aria-label={t('languageText', 'Language')}>{localeLabels[locale]}</Button>
     <Menu anchorEl={langAnchor} open={!!langAnchor} onClose={() => setLangAnchor(null)}>{locales.map(l => <MenuItem key={l} selected={l === locale} onClick={() => switchLanguage(l)} sx={{ fontSize: '1.6rem' }}>{localeLabels[l]}</MenuItem>)}</Menu>

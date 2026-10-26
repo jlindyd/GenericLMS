@@ -4,7 +4,7 @@ import { FaCertificate, FaQuestionCircle } from 'react-icons/fa';
 import { AiOutlineUser } from 'react-icons/ai';
 import { FiLogOut } from 'react-icons/fi';
 import { WorkspacePremium } from '@mui/icons-material';
-import { connection } from '../platform/config';
+import { connection, reviewMode } from '../platform/config';
 import { translate } from '../platform/i18n';
 
 // The signed-in visitor's menu, ported from the existing site's AvatarDropdown and its menu items (HP LIFE shows: certificates, badges,
@@ -18,7 +18,7 @@ const lang = locale => (locale === 'en' ? '' : `lang=${locale}`);
 const withLang = (path, locale) => { const [base, query = ''] = path.split('?'); const joined = [query, lang(locale)].filter(Boolean).join('&'); return joined ? `${base}?${joined}` : base; };
 
 export const initialsOf = name => (name || '').split(' ').map(part => part[0]).join('').slice(0, 3) || '*';
-export const signOutHref = (locale, here) => `${connection.auth}/api/logout?${new URLSearchParams({ continue: here, ...(locale ? { locale } : {}) })}`;
+export const signOutHref = (locale, here) => reviewMode ? '/review-signout' : `${connection.auth}/api/logout?${new URLSearchParams({ continue: here, ...(locale ? { locale } : {}) })}`;
 
 // [{ key, label, icon, href }] for the menu (the last one signs out).
 export function userMenuItems(locale, here) {

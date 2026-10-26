@@ -1,4 +1,4 @@
-import { connection, learnerUrl, resolveLocale } from './config.js';
+import { connection, learnerUrl, resolveLocale, reviewMode } from './config.js';
 import { readService, ServiceError } from './server.js';
 import { fixtureResponse, fixturesEnabled, recordFixtureChange } from './fixtures.js';
 
@@ -32,6 +32,7 @@ export async function refreshSession(refreshToken, { fetcher = fetch } = {}) {
 // Where a visitor who is not signed in goes: the sign-in site's logout address clears stale cookies and then shows the sign-in page,
 // which returns here afterwards.
 export function signInRedirect(resolvedUrl, locale) {
+  if (reviewMode) return { redirect: { destination: `/review-signin?next=${encodeURIComponent(resolvedUrl)}`, permanent: false } };
   const params = new URLSearchParams({ continue: learnerUrl(resolvedUrl), locale: resolveLocale(locale) });
   return { redirect: { destination: `${connection.auth}/api/logout?${params}`, permanent: false } };
 }

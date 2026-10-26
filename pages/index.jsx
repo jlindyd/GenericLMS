@@ -8,7 +8,7 @@ import ExploreCourses from '../components/ExploreCourses';
 import HomeSection from '../components/HomeSection';
 import HomeSuccessStories from '../components/HomeSuccessStories';
 import HomeNews from '../components/HomeNews';
-import { cmsBindings, cmsFeeds, connection, resolveLocale } from '../platform/config';
+import { cmsBindings, cmsFeeds, connection, resolveLocale, signUpHref } from '../platform/config';
 import { translate } from '../platform/i18n';
 import { feedPath, pagePath, readService, ServiceError } from '../platform/server';
 import { categoriesPath, categoryItem, courseCard, coursesPath, readLearning } from '../platform/learning';
@@ -70,7 +70,7 @@ export default function Home({ locale, banners, about, statistics, partners, cat
       </div>
     </section>}
     <HighlightedSection title={t('HomePage', 'startToday')} subtitle={t('BrandProgram', 'startTodaySubTitle')}>
-      <Button variant="containedPrimary" href={`${connection.auth}/${locale}/signup`}>{t('HomePage', 'joinNow')}</Button>
+      <Button variant="containedPrimary" href={signUpHref(locale)}>{t('HomePage', 'joinNow')}</Button>
       <Button variant="outlinedPrimary" href={`${connection.reference}/allcourses?page=1`}>{t('HomePage', 'exploreCourses')}</Button>
     </HighlightedSection>
     <HomeNews news={news} locale={locale} />

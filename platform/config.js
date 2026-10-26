@@ -24,6 +24,10 @@ export function learnerUrl(path = '/') {
  if (url.origin !== learnerOrigin) throw new Error('Invalid learner return destination.');
  return url.href;
 }
+// Review mode (local review only, built with NEXT_PUBLIC_REVIEW_MODE=1): sign in and sign out stay on this site and use the stand-in learner.
+export const reviewMode = process.env.NEXT_PUBLIC_REVIEW_MODE === '1';
+export const signInHref = (locale, backPath = '/') => (reviewMode ? `/review-signin?next=${encodeURIComponent(backPath)}` : `${connection.auth}/${locale}/login?continue=${encodeURIComponent(learnerUrl(backPath))}`);
+export const signUpHref = locale => (reviewMode ? '/review-signin?next=%2Fdashboard' : `${connection.auth}/${locale}/signup`);
 export const origins=Object.freeze({learner:'http://127.0.0.1:3020',cms:'http://127.0.0.1:3021',auth:'http://127.0.0.1:3022'});
 // Windows that may send CMS content to /preview: the CMS app on either spelling of the local address.
 export const cmsOrigins=Object.freeze([origins.cms,origins.cms.replace('127.0.0.1','localhost')]);

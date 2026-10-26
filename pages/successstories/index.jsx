@@ -4,7 +4,7 @@ import CmsContent from '../../components/CmsContent';
 import HighlightedSection from '../../components/HighlightedSection';
 import PageNotice from '../../components/PageNotice';
 import { StoryItem } from '../../components/ArticleListItems';
-import { cmsBindings, cmsFeeds, connection } from '../../platform/config';
+import { cmsBindings, cmsFeeds, connection, signUpHref } from '../../platform/config';
 import { translate } from '../../platform/i18n';
 import { feedPath, readService } from '../../platform/server';
 import { loadCmsPage } from '../../platform/pages';
@@ -26,7 +26,7 @@ export default function SuccessStories({ locale, page, stories = [], message }) 
     </div>
     <div className="desktop-only">
       <HighlightedSection title={t('SuccessStories', 'startToday')} subtitle={t('BrandProgram', 'startTodaySubTitle')}>
-        <Button variant="containedPrimary" href={`${connection.auth}/${locale}/signup`}>{t('SuccessStories', 'joinNow')}</Button>
+        <Button variant="containedPrimary" href={signUpHref(locale)}>{t('SuccessStories', 'joinNow')}</Button>
         <Button variant="outlinedPrimary" href={`${connection.reference}/allcourses?page=1`}>{t('SuccessStories', 'exploreCourses')}</Button>
       </HighlightedSection>
     </div>

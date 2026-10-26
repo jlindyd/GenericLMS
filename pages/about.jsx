@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import CmsContent from '../components/CmsContent';
 import TestimonialCarousel from '../components/TestimonialCarousel';
 import HighlightedSection from '../components/HighlightedSection';
-import { resolveLocale, cmsBindings, connection } from '../platform/config';
+import { resolveLocale, cmsBindings, connection, signUpHref } from '../platform/config';
 import { translate } from '../platform/i18n';
 import { feedPath, pagePath, readService, ServiceError } from '../platform/server';
 import { cleanPage } from '../platform/sanitize';
@@ -33,7 +33,7 @@ export default function About({ locale, page, stories, message }) {
     <CmsContent page={page} id="about" />
     <TestimonialCarousel stories={stories} locale={locale} />
     <HighlightedSection title={t('Aboutus', 'startToday')} subtitle={t('BrandProgram', 'startTodaySubTitle')}>
-      <Button variant="containedPrimary" href={`${connection.auth}/${locale}/signup`}>{t('Aboutus', 'joinNow')}</Button>
+      <Button variant="containedPrimary" href={signUpHref(locale)}>{t('Aboutus', 'joinNow')}</Button>
       <Button variant="outlinedPrimary" href={`${connection.reference}/allcourses?page=1`}>{t('Aboutus', 'exploreCourses')}</Button>
     </HighlightedSection>
   </Layout>;
