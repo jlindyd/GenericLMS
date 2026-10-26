@@ -11,7 +11,9 @@ Only GenericLMS is changed. The original LMSUI, LMSEXECUTION and API repositorie
 - Course/lesson/task membership and enabled flags are checked before loading a Content task.
 - Content status is authoritative from the API. Auto-validating retrieval refreshes course progress; Finished and WaitingForCoachApproval tasks are not submitted again.
 - Completion sends the unchanged `POST api/trainee/content/{id}/validate` with `{}`. The frontend's existing write allowlist adds only that exact learning-service request. Successful completion reloads status, progress and enabled tasks.
-- Self-paced static Content only. Video, forms, quiz, survey, assignment, tests, meetings and xAPI/SCORM continue at the reference learner site. Content containing frames, scripts, inline event handlers or coach assignment also falls back to the existing player.
+- Self-paced static Content and AzureBlobStorage Video tasks now run inside GenericLMS. Vimeo, forms, quiz, survey, assignment, tests, meetings and xAPI/SCORM temporarily continue at the reference learner site during migration. Content containing frames, scripts, inline event handlers or coach assignment also falls back to the existing player. The target remains one application, not a permanent split.
+- Video uses the same Video.js version as the original player. It resumes from API progress, restricts forward seeking when required, supports backward replay and saves a coalesced progress fraction every two seconds, on pause, and on leaving. Failed saves expose a retry action. Pending final progress is sent with fetch keepalive; abrupt browser/process termination can still interrupt delivery.
+- Video writes preserve `PUT api/trainee/video/{id}/progress` with a JSON number between 0 and 1. Each write checks course/lesson/task membership and enabled flags using the current learner session. Status, course progress and unlocked tasks are refreshed from the API. Skippable videos retain the original completion-on-opening behavior; completed videos remain replayable without further writes.
 
 ## Rollout
 
@@ -28,7 +30,7 @@ Rollback: rebuild without that flag. Existing dashboard links remain on the curr
 
 ## Subsequent self-paced stages
 
-Video/progress; editable forms, surveys and quizzes with distinct rules; assignments/tests if enabled; xAPI/SCORM state, statements, completion streams and existing same-origin asset proxy; certificates and complete-course feedback; full visual/accessibility regression. Coach-assisted courses are a separate later stage.
+Vimeo video; editable forms, surveys and quizzes with distinct rules; assignments/tests if enabled; xAPI/SCORM state, statements, completion streams and existing same-origin asset proxy; certificates and complete-course feedback; full visual/accessibility regression. Coach-assisted courses are a separate later stage. Video playback, seek prevention, saved resume and completion still require a real authenticated test-course browser run before rollout.
 
 ## Checks
 

@@ -9,10 +9,25 @@ export function taskHref(courseId, lessonId, taskId, type, locale = 'en', local 
   if (!types.includes(kind)) throw new ServiceError('Unknown task type.', 400);
   const path = `/trainee/courses/${positiveId(courseId)}/lessons/${positiveId(lessonId)}/tasks/${positiveId(taskId)}/${kind}`;
   const query = resolveLocale(locale) === 'en' ? '' : `?lang=${resolveLocale(locale)}`;
-  return `${local && kind === 'content' ? '' : connection.reference}${path}${query}`;
+  return `${local && ['content', 'video'].includes(kind) ? '' : connection.reference}${path}${query}`;
 }
 export const courseExecutionPath = id => `api/trainee/courses/${positiveId(id)}`;
 export const contentExecutionPath = id => `api/trainee/content/${positiveId(id)}`;
+export const videoExecutionPath = id => `api/trainee/video/${positiveId(id)}`;
+export const videoProgressPath = id => `${videoExecutionPath(id)}/progress`;
+export function videoProgress(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) throw new ServiceError('Video progress must be between zero and one.', 400);
+  return value;
+}
+export async function loadVideoExecution(token, courseId, lessonId, taskId, read = readAs) {
+  const course = await read(token, 'learning', courseExecutionPath(courseId));
+  const selected = taskInCourse(course, lessonId, taskId);
+  if (course.type !== 'SelfPaced' || String(selected.task.type).toLowerCase() !== 'video') return { course, selected, legacy: true };
+  const video = await read(token, 'learning', videoExecutionPath(taskId));
+  if (video.id !== positiveId(taskId)) throw new ServiceError('The task response did not match this task.', 502);
+  const legacy = String(video.assignedTo || '').toLowerCase() === 'coach' || (video.provider && video.provider !== 'AzureBlobStorage');
+  return { course, selected, video, legacy: Boolean(legacy) };
+}
 export function courseTasks(course) {
   return (course.lessons || []).flatMap(lesson => (lesson.tasks || []).map(task => ({ lesson, task })));
 }

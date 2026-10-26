@@ -1,4 +1,5 @@
 import '../styles.css';
+import 'video.js/dist/video-js.css';
 import { AppCacheProvider } from '@mui/material-nextjs/v15-pagesRouter';
 import { GlobalStyles } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
