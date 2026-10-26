@@ -9,7 +9,7 @@ export async function getServerSideProps(context) {
   try {
     const course = await readAs(session.token, 'learning', courseExecutionPath(context.params.courseId));
     const available = courseTasks(course).filter(({ lesson, task }) => lesson.isEnabled !== false && task.isEnabled !== false);
-    const current = available.find(({ task }) => !['Finished', 'Passed'].includes(task.status)) || available[0];
+    const current = available.find(({ task }) => !['Finished', 'Completed', 'Passed'].includes(task.status)) || available[0];
     if (!current) return { notFound: true };
     return { redirect: { destination: taskHref(course.id, current.lesson.id, current.task.id, current.task.type, locale, course.type === 'SelfPaced'), permanent: false } };
   } catch (error) { if (isSignInRequired(error)) return signInRedirect(context.resolvedUrl, locale); throw error; }

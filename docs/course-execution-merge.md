@@ -1,4 +1,4 @@
-# Course execution merge — first self-paced slice
+# Course execution merge — self-paced migration
 
 Only GenericLMS is changed. The original LMSUI, LMSEXECUTION and API repositories remain unchanged. HP LIFE currently uses self-paced courses; coach-assisted execution, review and grading are deferred.
 
@@ -11,9 +11,12 @@ Only GenericLMS is changed. The original LMSUI, LMSEXECUTION and API repositorie
 - Course/lesson/task membership and enabled flags are checked before loading a Content task.
 - Content status is authoritative from the API. Auto-validating retrieval refreshes course progress; Finished and WaitingForCoachApproval tasks are not submitted again.
 - Completion sends the unchanged `POST api/trainee/content/{id}/validate` with `{}`. The frontend's existing write allowlist adds only that exact learning-service request. Successful completion reloads status, progress and enabled tasks.
-- Self-paced static Content and AzureBlobStorage Video tasks now run inside GenericLMS. Vimeo, forms, quiz, survey, assignment, tests, meetings and xAPI/SCORM temporarily continue at the reference learner site during migration. Content containing frames, scripts, inline event handlers or coach assignment also falls back to the existing player. The target remains one application, not a permanent split.
+- Self-paced static Content, AzureBlobStorage Video and xAPI/SCORM activity routes are implemented inside GenericLMS. Vimeo, forms, quiz, survey, assignment, tests and meetings temporarily continue at the reference learner site during migration. Content containing frames, scripts, inline event handlers or coach assignment also falls back to the existing player. The target remains one application, not a permanent split.
 - Video uses the same Video.js version as the original player. It resumes from API progress, restricts forward seeking when required, supports backward replay and saves a coalesced progress fraction every two seconds, on pause, and on leaving. Failed saves expose a retry action. Pending final progress is sent with fetch keepalive; abrupt browser/process termination can still interrupt delivery.
 - Video writes preserve `PUT api/trainee/video/{id}/progress` with a JSON number between 0 and 1. Each write checks course/lesson/task membership and enabled flags using the current learner session. Status, course progress and unlocked tasks are refreshed from the API. Skippable videos retain the original completion-on-opening behavior; completed videos remain replayable without further writes.
+- xAPI launches use the same task metadata and learner `sub`/`preferred_username` mapping as the original app. Both xAPI and SCORM packages load through an authenticated same-origin package proxy. The real access token stays server-side; launch parameters point to local xAPI forwarding routes authenticated with the existing cookie. Package-relative files and byte ranges are supported. Storage signatures from the task URL are retained; launch parameters are not forwarded to storage. Only HTTPS package URLs on Azure Blob or DYD hosts are supported initially, with redirects rejected and paths confined to the package directory.
+- Forwarding preserves the backend's raw state body, content type, statement responses, status codes and conditional headers: `POST/PUT api/trainee/xApiActivity/{id}/statements`, `GET/PUT/DELETE .../activities/state?stateId=...`, and `GET .../completion`. Each request first validates current learner access, task membership, enabled flags and self-paced scope. Completion waits reconnect and status refreshes cover missed events without reloading the activity frame.
+- The native SCORM 1.2 runtime supplies `window.API`, restores location/suspend data/status/score, preserves the old `{content}` state envelope, and emits attempted/resumed/completed/passed/failed/terminated statements. State writes are queued, suspend-data updates are coalesced, failures expose retry, and unload flushes use keepalive. Neither a browser event nor a local SCORM status alone unlocks tasks; course progress is re-read from the API.
 
 ## Rollout
 
@@ -30,10 +33,10 @@ Rollback: rebuild without that flag. Existing dashboard links remain on the curr
 
 ## Subsequent self-paced stages
 
-Vimeo video; editable forms, surveys and quizzes with distinct rules; assignments/tests if enabled; xAPI/SCORM state, statements, completion streams and existing same-origin asset proxy; certificates and complete-course feedback; full visual/accessibility regression. Coach-assisted courses are a separate later stage. Video playback, seek prevention, saved resume and completion still require a real authenticated test-course browser run before rollout.
+Vimeo video; editable forms, surveys and quizzes with distinct rules; assignments/tests if enabled; certificates and complete-course feedback; full visual/accessibility regression. Coach-assisted courses are a separate later stage. Video playback and real xAPI/SCORM package loading, state resume, completion and course unlocking still require an authenticated test-course browser run before rollout. Published packages may have absolute asset URLs or transport assumptions that need package-specific verification. SCORM 2004 is not implemented. Browser/process termination can interrupt even keepalive requests.
 
 ## Checks
 
-`npm test` covers existing site behavior plus execution links, invalid IDs, course/task relationships, locked tasks, self-paced filtering, interactive fallback, auto-validation progress reads, the exact completion endpoint/body and same-origin/session route guards. All execution writes are mocked in tests.
+`npm test` covers existing site behavior plus execution links, invalid IDs, course/task relationships, locked tasks, self-paced filtering, interactive fallback, auto-validation progress reads, exact completion/video/xAPI contracts, safe package paths/hosts, raw state forwarding, session guards, SCORM resume, score, failed-save retry and unload persistence. All execution writes are mocked in tests.
 
 Shared-session preparation: the live HP LIFE Test dashboard was accessible using its existing session. A compatible hostname pointing to GenericLMS is still required before that session can reach the local app. No session token was copied across origins and no separate login was added. Do not treat the configurable return URL as completing DNS, HTTPS, hosting, or real learner execution verification.

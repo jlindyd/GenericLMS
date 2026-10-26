@@ -9,10 +9,19 @@ export function taskHref(courseId, lessonId, taskId, type, locale = 'en', local 
   if (!types.includes(kind)) throw new ServiceError('Unknown task type.', 400);
   const path = `/trainee/courses/${positiveId(courseId)}/lessons/${positiveId(lessonId)}/tasks/${positiveId(taskId)}/${kind}`;
   const query = resolveLocale(locale) === 'en' ? '' : `?lang=${resolveLocale(locale)}`;
-  return `${local && ['content', 'video'].includes(kind) ? '' : connection.reference}${path}${query}`;
+  return `${local && ['content', 'video', 'xapiactivity'].includes(kind) ? '' : connection.reference}${path}${query}`;
 }
 export const courseExecutionPath = id => `api/trainee/courses/${positiveId(id)}`;
 export const contentExecutionPath = id => `api/trainee/content/${positiveId(id)}`;
+export const activityExecutionPath = id => `api/trainee/task/${positiveId(id)}`;
+export async function loadActivityExecution(token, courseId, lessonId, taskId, read = readAs) {
+  const course = await read(token, 'learning', courseExecutionPath(courseId));
+  const selected = taskInCourse(course, lessonId, taskId);
+  if (course.type !== 'SelfPaced' || String(selected.task.type).toLowerCase() !== 'xapiactivity') return { course, selected, legacy: true };
+  const activity = await read(token, 'learning', activityExecutionPath(taskId));
+  if (activity.id !== positiveId(taskId)) throw new ServiceError('The task response did not match this task.', 502);
+  return { course, selected, activity, legacy: String(activity.assignedTo || '').toLowerCase() === 'coach' };
+}
 export const videoExecutionPath = id => `api/trainee/video/${positiveId(id)}`;
 export const videoProgressPath = id => `${videoExecutionPath(id)}/progress`;
 export function videoProgress(value) {

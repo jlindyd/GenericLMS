@@ -4,18 +4,20 @@ import { useRouter } from 'next/router';
 import { Alert, Box, Button, LinearProgress, List, ListItemButton, ListItemText, Paper, Stack, Typography } from '@mui/material';
 import Footer from './Footer';
 import ExecutionVideo from './ExecutionVideo';
+import ExecutionActivity from './ExecutionActivity';
 import { direction } from '../platform/config';
 import { canValidateContent, courseTasks, taskHref } from '../platform/execution';
 import labels from '../platform/execution-translations.json';
 
 // Execution has its own frame rather than the catalogue's search/navigation header.
 // Kept opt-in until the HP LIFE player has been compared on the test environment.
-export default function ExecutionPlayer({ locale = 'en', course: initialCourse, content: initialContent, video, lessonId, taskId, error }) {
+export default function ExecutionPlayer({ locale = 'en', course: initialCourse, content: initialContent, video, activity, user, lessonId, taskId, error }) {
   const router = useRouter();
   const [updated, setUpdated] = useState(null);
   const snapshot = updated?.taskId === taskId ? updated : null;
   const course = snapshot ? { ...initialCourse, progress: snapshot.progress, lessons: snapshot.lessons } : initialCourse;
-  const content = video ? { ...video, status: snapshot?.status || video.status } : initialContent;
+  const interactive = video || activity;
+  const content = interactive ? { ...interactive, status: snapshot?.status || interactive.status } : initialContent;
   const [busy, setBusy] = useState(false), [failure, setFailure] = useState('');
   const t = key => labels[locale]?.[key] || labels.en[key] || key;
   const dashboard = `/dashboard?lang=${locale}&page=1`;
@@ -49,13 +51,13 @@ export default function ExecutionPlayer({ locale = 'en', course: initialCourse, 
       <Box component="main" id="execution-content" sx={{ p: { xs: 2, md: 4 }, minWidth: 0 }}>
         <Typography component="h1" sx={{ fontSize: 28, mb: 3 }}>{content.name}</Typography>
         {failure && <Alert severity="error" sx={{ mb: 2 }}>{failure}</Alert>}
-        {['Finished', 'WaitingForCoachApproval'].includes(content.status) && <Alert severity={content.status === 'Finished' ? 'success' : 'info'} sx={{ mb: 2 }}>{content.status === 'Finished' ? t('completed') : t('waiting')}</Alert>}
-        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fff', '& img, & video': { maxWidth: '100%', height: 'auto' } }}>{video ? <ExecutionVideo key={taskId} video={video} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : <div className="editor-preview" dangerouslySetInnerHTML={{ __html: content.body }} />}</Paper>
+        {['Finished', 'Completed', 'Passed', 'WaitingForCoachApproval'].includes(content.status) && <Alert severity={content.status === 'WaitingForCoachApproval' ? 'info' : 'success'} sx={{ mb: 2 }}>{content.status === 'WaitingForCoachApproval' ? t('waiting') : t('completed')}</Alert>}
+        <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, bgcolor: '#fff', '& img, & video': { maxWidth: '100%', height: 'auto' } }}>{activity ? <ExecutionActivity key={taskId} activity={activity} user={user} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : video ? <ExecutionVideo key={taskId} video={video} courseId={course.id} lessonId={lessonId} onProgress={data => setUpdated({ ...data, taskId })} /> : <div className="editor-preview" dangerouslySetInnerHTML={{ __html: content.body }} />}</Paper>
         <Stack direction="row" useFlexGap flexWrap="wrap" gap={2} sx={{ mt: 3, justifyContent: 'space-between' }}>
           {previous && <Button disabled={busy} href={link(previous)}>{t('prev')}</Button>}
-          {!video && canValidateContent(content) && <Button variant="containedPrimary" disabled={busy} onClick={complete}>{busy ? '…' : t('submitBtn')}</Button>}
+          {!interactive && canValidateContent(content) && <Button variant="containedPrimary" disabled={busy} onClick={complete}>{busy ? '…' : t('submitBtn')}</Button>}
           {next && <Button variant="outlined" disabled={busy} href={link(next)}>{t('next')}</Button>}
-          {!next && content.status === 'Finished' && <Button href={dashboard}>{t('back')}</Button>}
+          {!next && ['Finished', 'Completed', 'Passed'].includes(content.status) && <Button href={dashboard}>{t('back')}</Button>}
         </Stack>
       </Box>
     </Box><Footer locale={locale} />
