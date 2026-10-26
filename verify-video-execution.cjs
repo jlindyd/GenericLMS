@@ -19,6 +19,14 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
   await assert.rejects(() => execution.loadVideoExecution('t', 1, 2, 3, async (...args) => args[2].includes('/courses/') ? course : { ...video, id: 99 }), /did not match/);
   const vimeo = await execution.loadVideoExecution('t', 1, 2, 3, async (...args) => args[2].includes('/courses/') ? course : { ...video, provider: 'Vimeo' });
   assert.equal(vimeo.legacy, true);
+  // Vimeo videos are played here only with a real Vimeo player address; anything else carries on in the existing player.
+  const withVideo = extra => execution.loadVideoExecution('t', 1, 2, 3, async (...args) => args[2].includes('/courses/') ? course : { ...video, ...extra });
+  assert.equal((await withVideo({ provider: 'Vimeo', url: 'https://player.vimeo.com/video/22439234' })).legacy, false);
+  assert.equal((await withVideo({ provider: 'Vimeo', url: 'https://player.vimeo.com/video/22439234?h=abc123def4' })).legacy, false);
+  for (const url of ['http://player.vimeo.com/video/1', 'https://player.vimeo.com.evil.test/video/1', 'https://evil.test/player.vimeo.com/video/1', 'https://player.vimeo.com/video/abc', 'https://player.vimeo.com/video/1#x', 'javascript:alert(1)', '', undefined]) assert.equal((await withVideo({ provider: 'Vimeo', url })).legacy, true, String(url));
+  assert.equal((await withVideo({ provider: 'Wistia', url: 'https://player.vimeo.com/video/1' })).legacy, true);
+  assert.equal((await withVideo({ provider: undefined })).legacy, false); // no provider named means the Azure player, as before
+  assert.equal((await withVideo({ provider: 'Vimeo', url: 'https://player.vimeo.com/video/1', assignedTo: 'Coach' })).legacy, true);
   const locked = { ...course, lessons: [{ id: 2, tasks: [{ id: 3, type: 'Video', isEnabled: false }] }] };
   await assert.rejects(() => execution.loadVideoExecution('t', 1, 2, 3, async () => locked), /locked/);
   await session.sendAs('token', 'learning', execution.videoProgressPath(3), 'PUT', { body: 0.5, fetcher: async (url, init) => { calls.push({ url, init }); return { ok: true }; } });

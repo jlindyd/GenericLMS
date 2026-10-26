@@ -1,41 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Typography } from '@mui/material';
+import { createProgressSaver } from '../platform/progress-saver';
 
 export default function ExecutionVideo({ video, courseId, lessonId, onProgress }) {
   const host = useRef(null), retry = useRef(null), callback = useRef(onProgress);
   const [failure, setFailure] = useState('');
   callback.current = onProgress;
   useEffect(() => {
-    let player, disposed = false, inFlight = false, pending = null, failed = null;
-    let sent = Number(video.progress || 0), watched = sent, lastSentAt = 0;
+    let player, disposed = false;
+    let watched = Number(video.progress || 0);
     const finished = video.status === 'Finished';
     const tracked = !finished && !video.canSkipForward;
-    async function drain() {
-      if (inFlight || pending === null) return;
-      const progress = pending; pending = null; inFlight = true;
-      try {
-        const response = await fetch('/api/execution/video-progress', {
-          method: 'PUT', keepalive: true, headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId, lessonId, taskId: video.id, progress }),
-        });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.message || 'Unable to save video progress.');
-        sent = Math.max(sent, progress); failed = null;
-        if (!disposed) { setFailure(''); callback.current(body); }
-      } catch (error) {
-        failed = Math.max(progress, pending ?? 0); pending = null;
-        if (!disposed) setFailure(error.message || 'Unable to save video progress.');
-      } finally {
-        inFlight = false;
-        if (pending !== null) void drain();
-      }
-    }
-    function save(progress, force = false) {
-      if (finished || progress <= sent) return;
-      pending = Math.max(pending ?? 0, progress);
-      if (force || Date.now() - lastSentAt >= 2000) { lastSentAt = Date.now(); void drain(); }
-    }
-    retry.current = () => { if (failed !== null) { pending = Math.max(failed, pending ?? 0); void drain(); } };
+    const saver = createProgressSaver({ courseId, lessonId, taskId: video.id, initial: watched, finished, onSaved: body => { setFailure(''); callback.current(body); }, onFailure: setFailure });
+    const save = (progress, force) => saver.save(progress, force);
+    retry.current = () => saver.retry();
     async function initialize() {
       try {
         const { default: videojs } = await import('video.js');
@@ -75,7 +53,7 @@ export default function ExecutionVideo({ video, courseId, lessonId, onProgress }
     window.addEventListener('pagehide', flush);
     document.addEventListener('visibilitychange', visibility);
     return () => {
-      flush(); disposed = true; retry.current = null;
+      flush(); disposed = true; saver.dispose(); retry.current = null;
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', visibility);
       if (player && !player.isDisposed()) player.dispose();

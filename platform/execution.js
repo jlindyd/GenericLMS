@@ -22,6 +22,9 @@ export async function loadActivityExecution(token, courseId, lessonId, taskId, r
   if (activity.id !== positiveId(taskId)) throw new ServiceError('The task response did not match this task.', 502);
   return { course, selected, activity, legacy: String(activity.assignedTo || '').toLowerCase() === 'coach' };
 }
+// Azure Blob Storage videos (also when the provider is not stated) and Vimeo videos with a Vimeo player address are played here.
+export const vimeoPlayerUrl = url => /^https:\/\/player\.vimeo\.com\/video\/[0-9]+(?:\?[A-Za-z0-9=&_%.-]*)?$/.test(String(url || ''));
+export const videoProviderSupported = video => !video.provider || video.provider === 'AzureBlobStorage' || (video.provider === 'Vimeo' && vimeoPlayerUrl(video.url));
 export const videoExecutionPath = id => `api/trainee/video/${positiveId(id)}`;
 export const videoProgressPath = id => `${videoExecutionPath(id)}/progress`;
 export function videoProgress(value) {
@@ -34,8 +37,7 @@ export async function loadVideoExecution(token, courseId, lessonId, taskId, read
   if (course.type !== 'SelfPaced' || String(selected.task.type).toLowerCase() !== 'video') return { course, selected, legacy: true };
   const video = await read(token, 'learning', videoExecutionPath(taskId));
   if (video.id !== positiveId(taskId)) throw new ServiceError('The task response did not match this task.', 502);
-  const legacy = String(video.assignedTo || '').toLowerCase() === 'coach' || (video.provider && video.provider !== 'AzureBlobStorage');
-  return { course, selected, video, legacy: Boolean(legacy) };
+  return { course, selected, video, legacy: String(video.assignedTo || '').toLowerCase() === 'coach' || !videoProviderSupported(video) };
 }
 export function courseTasks(course) {
   return (course.lessons || []).flatMap(lesson => (lesson.tasks || []).map(task => ({ lesson, task })));

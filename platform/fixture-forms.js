@@ -28,8 +28,21 @@ const makeAssignments = () => ({
   42: { id: 42, name: 'Marketing assignment (graded)', type: 'Assignment', status: 'Passed', assignedTo: 'Trainee', isEnabled: true, body: '<p>Describe your marketing plan.</p>', minPassingScore: 0.6, score: 0.85, feedback: 'Clear and practical. Well done.', maxFileSize: 5242880, maxFileCount: 1, allowedFileExtensions: '.doc,.docx,.zip', files: [{ name: 'plan-42.docx', originalName: 'My marketing plan.docx', size: 20480, uploadDate: '2026-10-01T00:00:00Z', url: 'https://example.test/plan-42.docx' }] },
   43: { id: 43, name: 'Finance assignment (not passed)', type: 'Assignment', status: 'Failed', assignedTo: 'Trainee', isEnabled: true, body: '<p>Prepare a budget.</p>', minPassingScore: 0.6, score: 0.4, feedback: 'Please add the cash flow table.', maxFileSize: 5242880, maxFileCount: 1, allowedFileExtensions: '.doc,.docx,.zip', files: [{ name: 'budget-43.zip', originalName: 'budget.zip', size: 40960, uploadDate: '2026-10-02T00:00:00Z', url: 'https://example.test/budget-43.zip' }] },
 });
-const shared = globalThis.__genericLmsFixtureForms || (globalThis.__genericLmsFixtureForms = { forms: make(), assignments: makeAssignments() });
-export const fixtureCourse = () => ({ id: 1, name: 'Strategic Planning in the AI Age', type: 'SelfPaced', progress: 0.25, lessons: [{ id: 11, name: 'Review', isEnabled: true, tasks: [...Object.values(shared.forms), ...Object.values(shared.assignments)].map(f => ({ id: f.id, name: f.name, type: f.type, status: f.status, isEnabled: true })) }] });
+// A public Vimeo video ("The Mountain"), so playback can be reviewed without a real course.
+const makeVideos = () => ({
+  51: { id: 51, name: 'Welcome video (Vimeo)', type: 'Video', provider: 'Vimeo', url: 'https://player.vimeo.com/video/22439234', status: 'NotStarted', progress: 0, canSkipForward: false, assignedTo: 'Trainee', isEnabled: true, description: 'A short introduction to the course.' },
+  52: { id: 52, name: 'Watched video (Vimeo)', type: 'Video', provider: 'Vimeo', url: 'https://player.vimeo.com/video/22439234', status: 'Finished', progress: 1, canSkipForward: false, assignedTo: 'Trainee', isEnabled: true, description: 'Already finished; it can be replayed.' },
+  53: { id: 53, name: 'Optional video (Vimeo, may skip)', type: 'Video', provider: 'Vimeo', url: 'https://player.vimeo.com/video/22439234', status: 'NotStarted', progress: 0, canSkipForward: true, assignedTo: 'Trainee', isEnabled: true, description: 'This video can be skipped through.' },
+});
+const shared = globalThis.__genericLmsFixtureForms || (globalThis.__genericLmsFixtureForms = { forms: make(), assignments: makeAssignments(), videos: makeVideos() });
+shared.videos = shared.videos || makeVideos();
+export const fixtureCourse = () => ({ id: 1, name: 'Strategic Planning in the AI Age', type: 'SelfPaced', progress: 0.25, lessons: [{ id: 11, name: 'Review', isEnabled: true, tasks: [...Object.values(shared.forms), ...Object.values(shared.assignments), ...Object.values(shared.videos)].map(f => ({ id: f.id, name: f.name, type: f.type, status: f.status, isEnabled: true })) }] });
+export const fixtureVideo = id => { const item = shared.videos[id]; if (!item) throw new Error('No fixture for this request.'); return JSON.parse(JSON.stringify(item)); };
+// A video's progress only moves forward; it is finished once it is (nearly) all watched, like the service.
+export function fixtureVideoProgress(id, progress) {
+  const item = shared.videos[id]; if (!item || item.status === 'Finished' || typeof progress !== 'number') return;
+  item.progress = Math.max(item.progress, progress); item.status = item.progress >= 0.99 ? 'Finished' : 'InProgress';
+}
 export const fixtureAssignment = id => { const item = shared.assignments[id]; if (!item) throw new Error('No fixture for this request.'); return JSON.parse(JSON.stringify(item)); };
 export const fixtureForm = id => { const form = shared.forms[id]; if (!form) throw new Error('No fixture for this request.'); return JSON.parse(JSON.stringify(form)); };
 
@@ -57,4 +70,4 @@ export function fixtureAssignmentChange(id, action, detail) {
   if (action === 'DELETE') { item.files = []; item.status = 'Saved'; }
   if (action === 'POST') item.status = 'WaitingForGrading';
 }
-export const resetFixtureForms = () => { shared.forms = make(); shared.assignments = makeAssignments(); };
+export const resetFixtureForms = () => { shared.forms = make(); shared.assignments = makeAssignments(); shared.videos = makeVideos(); };

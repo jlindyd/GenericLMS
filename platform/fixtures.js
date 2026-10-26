@@ -1,5 +1,5 @@
 import { readService } from './server.js';
-import { fixtureAssignment, fixtureAssignmentChange, fixtureCourse, fixtureForm, fixtureSubmit } from './fixture-forms.js';
+import { fixtureAssignment, fixtureAssignmentChange, fixtureCourse, fixtureForm, fixtureSubmit, fixtureVideo, fixtureVideoProgress } from './fixture-forms.js';
 
 // Stand-in answers for the signed-in reads, used only when GENERIC_LMS_FIXTURES=1 and the access cookie is the word "fixture".
 // It lets the signed-in pages be built and compared on a computer that cannot receive the real sign-in cookie (it belongs to the
@@ -21,6 +21,7 @@ export async function fixtureResponse(service, path) {
   ];
   if (service !== 'learning') throw new Error('No fixture for this service.');
   if (path === 'api/trainee/courses/1') return fixtureCourse();
+  if (/^api\/trainee\/video\/[0-9]+$/.test(path)) return fixtureVideo(Number(path.split('/').pop()));
   if (/^api\/trainee\/assignment\/[0-9]+$/.test(path)) return fixtureAssignment(Number(path.split('/').pop()));
   if (/^api\/trainee\/form\/[0-9]+$/.test(path)) return fixtureForm(Number(path.split('/').pop()));
   const catalogue = await readService('learning', 'api/marketplace/courses?page=0&resultsPerPage=12&language=en');
@@ -41,6 +42,8 @@ export async function fixtureResponse(service, path) {
 
 // In review mode a form task keeps the learner's answers in memory so a save or submit can be seen working.
 export function recordFixtureChange(service, path, method, body) {
+  const video = /^api\/trainee\/video\/([0-9]+)\/progress$/.exec(path);
+  if (service === 'learning' && video && method === 'PUT') { fixtureVideoProgress(Number(video[1]), body); return; }
   const assignment = /^api\/trainee\/assignment\/([0-9]+)(?:\/files(?:\/.+)?)?$/.exec(path);
   if (service === 'learning' && assignment) { fixtureAssignmentChange(Number(assignment[1]), method, body); return; }
   if (service === 'learning' && method === 'POST' && /^api\/trainee\/form\/[0-9]+$/.test(path)) fixtureSubmit(Number(path.split('/').pop()), body);
