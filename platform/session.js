@@ -118,6 +118,8 @@ const allowedChanges = [
   ['learning', 'PUT', path => /^api\/trainee\/video\/[1-9][0-9]*\/progress$/.test(path)],
   ['learning', 'POST', path => /^api\/trainee\/content\/[1-9][0-9]*\/validate$/.test(path)],
   ['learning', 'POST', path => /^api\/trainee\/form\/[1-9][0-9]*$/.test(path)],
+  ['learning', 'POST', path => /^api\/trainee\/assignment\/[1-9][0-9]*$/.test(path)],
+  ['learning', 'DELETE', path => /^api\/trainee\/assignment\/[1-9][0-9]*\/files\/[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(path) && !path.includes('..')],
   ['notifications', 'POST', path => path.startsWith('Notifications/') && path.endsWith('/read') && isId(path.slice(14, -5))],
   ['notifications', 'DELETE', path => path === 'Notifications' || (path.startsWith('Notifications/') && isId(path.slice(14)))],
   ['identity', 'PUT', path => path === 'api/account/profile'], ['identity', 'POST', path => path === 'api/account/changepassword'], ['identity', 'POST', path => path === 'api/account/setPassword'],
@@ -134,6 +136,21 @@ export async function sendAs(token, service, path, method, { fetcher = fetch, bo
     let detail = '';
     try { const data = await response.json(); detail = String(data.message || data.error_description || data.title || '').slice(0, 300); } catch { /* no readable detail */ }
     throw new ServiceError(detail || 'The change could not be saved.', response.status >= 400 && response.status < 500 ? 400 : 502);
+  }
+}
+
+// The one request that sends a file: the learner's own assignment document, as a form with one part named "files" (as the existing player does).
+export async function sendFileAs(token, path, { name, type, data }, { fetcher = fetch } = {}) {
+  if (!/^api\/trainee\/assignment\/[1-9][0-9]*\/files$/.test(String(path)) || !connection.learning) throw new ServiceError('Invalid service request.', 400);
+  if (fixturesEnabled(token)) { recordFixtureChange('learning', path, 'FILE', { name, size: data.length }); return; }
+  const form = new FormData();
+  form.append('files', new Blob([data], { type: type || 'application/octet-stream' }), name);
+  const response = await fetcher(`${connection.learning}/${path}`, { method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(120000), headers: { 'Client-Id': connection.clientId, Authorization: `Bearer ${token}` }, body: form });
+  if (!response.ok) {
+    if (response.status === 401) throw new ServiceError('Sign in to continue.', 401);
+    let detail = '';
+    try { const result = await response.json(); detail = String(result.message || result.error_description || result.title || '').slice(0, 300); } catch { /* no readable detail */ }
+    throw new ServiceError(detail || 'The file could not be uploaded.', response.status >= 400 && response.status < 500 ? 400 : 502);
   }
 }
 

@@ -8,8 +8,8 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
   const course = { id: 1, type: 'SelfPaced', progress: 0, lessons: [{ id: 2, isEnabled: true, tasks: [{ id: 3, type: 'Content', isEnabled: true, status: 'NotStarted' }, { id: 4, type: 'Quiz', isEnabled: false }] }] };
   const content = { id: 3, body: '<p>Learning content 中文 العربية</p>', status: 'NotStarted', assignedTo: 'Trainee' };
   assert.equal(execution.taskHref(1, 2, 3, 'Content', 'ar', true), '/trainee/courses/1/lessons/2/tasks/3/content?lang=ar');
-  assert.equal(execution.taskHref(1, 2, 3, 'Assignment', 'en', true), config.connection.reference + '/trainee/courses/1/lessons/2/tasks/3/assignment');
-  for (const kind of ['Quiz', 'Survey', 'EditableForm']) assert.equal(execution.taskHref(1, 2, 3, kind, 'en', true), `/trainee/courses/1/lessons/2/tasks/3/${kind.toLowerCase()}`);
+  assert.equal(execution.taskHref(1, 2, 3, 'Test', 'en', true), config.connection.reference + '/trainee/courses/1/lessons/2/tasks/3/test');
+  for (const kind of ['Quiz', 'Survey', 'EditableForm', 'Assignment']) assert.equal(execution.taskHref(1, 2, 3, kind, 'en', true), `/trainee/courses/1/lessons/2/tasks/3/${kind.toLowerCase()}`);
   assert.throws(() => execution.taskHref('../1', 2, 3, 'Content'));
   assert.throws(() => execution.taskInCourse(course, 2, 4), /locked/);
   assert.throws(() => execution.taskInCourse(course, 99, 3), /does not belong/);
@@ -28,7 +28,7 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
   const calls = [];
   await session.sendAs('token', 'learning', 'api/trainee/content/3/validate', 'POST', { body: {}, fetcher: async (url, init) => { calls.push({ url, init }); return { ok: true }; } });
   assert.equal(calls[0].url, config.connection.learning + '/api/trainee/content/3/validate'); assert.equal(calls[0].init.body, '{}');
-  await assert.rejects(() => session.sendAs('t', 'learning', 'api/trainee/assignment/3', 'POST', { body: {} }), /Invalid/);
+  await assert.rejects(() => session.sendAs('t', 'learning', 'api/trainee/test/3', 'POST', { body: {} }), /Invalid/);
   const route = load('pages/api/execution/complete.js', {
     '../../../platform/server': server, '../../../platform/session': { ...session, sendAs: async (...args) => calls.push(args) },
     '../../../platform/execution': { ...execution, loadContentExecution: async () => ({ ...result, content }) },

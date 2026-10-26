@@ -23,7 +23,19 @@
   "validation.maxSelection_plural": "Please select no more than {{count}} options",
   "QuestionNavigationBar.question": "Question {{count}}",
   "QuestionNavigationBar.goToQuestion": "Go to question",
-  "TaskPage.typeYourAnswer": "Type Your Answer"
+  "TaskPage.typeYourAnswer": "Type Your Answer",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "Please turn in your assignment by uploading your file here.",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "ar": {
   "QuestionsList.answerRequired": "يلزم تقديم إجابة.",
@@ -42,7 +54,19 @@
   "validation.minSelection_plural": "الرجاء تحديد {{count}} خيارات على الأقل",
   "validation.maxSelection": "الرجاء تحديد {{count}} خيارات على الأكثر",
   "validation.maxSelection_plural": "الرجاء تحديد {{count}} خيارات على الأكثر",
-  "TaskPage.typeYourAnswer": "أكتب أجابتك"
+  "TaskPage.typeYourAnswer": "أكتب أجابتك",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "يرجى تسليم واجبك عن طريق تحميل ملفك هنا.",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "es": {
   "QuestionsList.answerRequired": "Se requiere una respuesta.",
@@ -61,7 +85,19 @@
   "validation.minSelection_plural": "Por favor seleccione al menos {{count}} opciones",
   "validation.maxSelection": "Por favor seleccione no más de {{count}} opción",
   "validation.maxSelection_plural": "Por favor seleccione no más de {{count}} opciones",
-  "TaskPage.typeYourAnswer": "Escribe tu respuesta"
+  "TaskPage.typeYourAnswer": "Escribe tu respuesta",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "Entregue su tarea cargando su archivo aquí.",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "fr": {
   "QuestionsList.answerRequired": "Réponse requise.",
@@ -80,7 +116,19 @@
   "validation.minSelection_plural": "Veuillez sélectionner au moins {{count}} options",
   "validation.maxSelection": "Veuillez sélectionner au maximum {{count}} option",
   "validation.maxSelection_plural": "Veuillez sélectionner au maximum {{count}} options",
-  "TaskPage.typeYourAnswer": "Tapez votre réponse"
+  "TaskPage.typeYourAnswer": "Tapez votre réponse",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "Veuillez rendre votre devoir en téléchargeant votre fichier ici.",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "hi": {
   "QuestionsList.answerRequired": "उत्तर आवश्यक है।",
@@ -99,7 +147,19 @@
   "validation.minSelection_plural": "कृपया कम से कम {{count}} विकल्प चुनें",
   "validation.maxSelection": "कृपया {{count}} से अधिक विकल्प न चुनें",
   "validation.maxSelection_plural": "कृपया {{count}} से अधिक विकल्प न चुनें",
-  "TaskPage.typeYourAnswer": "अपना उत्तर लिखें"
+  "TaskPage.typeYourAnswer": "अपना उत्तर लिखें",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "कृपया अपनी फ़ाइल यहाँ अपलोड करके अपना असाइनमेंट दें।",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "id": {
   "QuestionsList.answerRequired": "Jawaban diperlukan",
@@ -118,7 +178,19 @@
   "validation.minSelection_plural": "Silakan pilih minimal {{count}} opsi",
   "validation.maxSelection": "Silakan pilih tidak lebih dari {{count}} opsi",
   "validation.maxSelection_plural": "Silakan pilih tidak lebih dari {{count}} opsi",
-  "TaskPage.typeYourAnswer": "Ketik jawabanmu"
+  "TaskPage.typeYourAnswer": "Ketik jawabanmu",
+  "Assignment.FileSizeValidation": "File must be smaller than {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "No assignment has been submitted",
+  "Assignment.Submitted": "Assignment has been submitted",
+  "Assignment.Approved": "Assignment has been approved",
+  "Assignment.Failed": "Assignment has been failed",
+  "Assignment.UploadFile": "Silakan serahkan tugas Anda dengan mengunggah file Anda di sini.",
+  "Assignment.UploadZip": "If you have more than one document, please zip all your documents.",
+  "Assignment.Upload": "Upload",
+  "Assignment.ConfirmationMessage": "Are you sure you want to submit this assignment?",
+  "Assignment.MinimumGrade": "Minimum Grade",
+  "Assignment.Grade": "Grade",
+  "Assignment.Feedback": "Feedback"
  },
  "pt": {
   "QuestionsList.answerRequired": "Resposta obrigatória.",
@@ -133,7 +205,19 @@
   "EditableFormFeedback.resumeBtn": "Continuar",
   "EditableFormFeedback.formCompleted": "Formulário Concluído",
   "EditableFormFeedback.editBtn": "Editar",
-  "TaskPage.typeYourAnswer": "Digite sua resposta"
+  "TaskPage.typeYourAnswer": "Digite sua resposta",
+  "Assignment.FileSizeValidation": "O arquivo deve ser menor que {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "Nenhuma tarefa foi enviada",
+  "Assignment.Submitted": "Tarefa enviada",
+  "Assignment.Approved": "Tarefa aprovada",
+  "Assignment.Failed": "Tarefa reprovada",
+  "Assignment.UploadFile": "Entregue sua tarefa fazendo upload de seu arquivo aqui.",
+  "Assignment.UploadZip": "Se você tiver mais de um documento, por favor, utilize o ZIP",
+  "Assignment.Upload": "Enviar",
+  "Assignment.ConfirmationMessage": "Você tem certeza de que deseja enviar esta tarefa?",
+  "Assignment.MinimumGrade": "Nota mínima",
+  "Assignment.Grade": "Grau",
+  "Assignment.Feedback": "Comentários"
  },
  "zh-Hans": {
   "QuestionsList.answerRequired": "必须回答.",
@@ -148,6 +232,18 @@
   "EditableFormFeedback.resumeBtn": "恢復",
   "EditableFormFeedback.formCompleted": "表格已完成",
   "EditableFormFeedback.editBtn": "编辑",
-  "TaskPage.typeYourAnswer": "输入你的答案"
+  "TaskPage.typeYourAnswer": "输入你的答案",
+  "Assignment.FileSizeValidation": "文件档案需小于 {{maxfileSize}} MB.",
+  "Assignment.NoSubmitted": "未有任何作业上交",
+  "Assignment.Submitted": "作业已上交",
+  "Assignment.Approved": "作业已通过",
+  "Assignment.Failed": "作业未能通过",
+  "Assignment.UploadFile": "请通过在此处上传您的文件来上交您的作业。",
+  "Assignment.UploadZip": "若有超过一个档案，请制作 zip 文件来压缩文件.",
+  "Assignment.Upload": "上传",
+  "Assignment.ConfirmationMessage": "是否确认上交作业",
+  "Assignment.MinimumGrade": "最低等级",
+  "Assignment.Grade": "年级",
+  "Assignment.Feedback": "回馈"
  }
 }

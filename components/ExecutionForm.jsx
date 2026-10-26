@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Alert, Box, Button, IconButton, Checkbox, FormControlLabel, FormHelperText, MenuItem, Paper, Radio, RadioGroup, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import { changeAnswer, formAnswerable, missingRequired, savedAnswers, selectionErrors, timeAnswer, timeText } from '../platform/forms';
+import { changeAnswer, formAnswerable, missingRequired, savedAnswers, selectionErrors, timeAnswer, timeText } from '../platform/form-rules';
 import { formText } from '../platform/form-text';
 import { direction } from '../platform/config';
 

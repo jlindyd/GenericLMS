@@ -9,7 +9,7 @@ export function taskHref(courseId, lessonId, taskId, type, locale = 'en', local 
   if (!types.includes(kind)) throw new ServiceError('Unknown task type.', 400);
   const path = `/trainee/courses/${positiveId(courseId)}/lessons/${positiveId(lessonId)}/tasks/${positiveId(taskId)}/${kind}`;
   const query = resolveLocale(locale) === 'en' ? '' : `?lang=${resolveLocale(locale)}`;
-  return `${local && ['content', 'video', 'xapiactivity', 'survey', 'editableform', 'quiz'].includes(kind) ? '' : connection.reference}${path}${query}`;
+  return `${local && ['content', 'video', 'xapiactivity', 'survey', 'editableform', 'quiz', 'assignment'].includes(kind) ? '' : connection.reference}${path}${query}`;
 }
 export const courseExecutionPath = id => `api/trainee/courses/${positiveId(id)}`;
 export const contentExecutionPath = id => `api/trainee/content/${positiveId(id)}`;

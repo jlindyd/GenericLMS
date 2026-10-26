@@ -5,7 +5,7 @@ function load(file, imports = {}) { const m = { exports: {} }; new Function('req
   const fixtures = load('platform/fixtures.js', { './server.js': server, './fixture-forms.js': load('platform/fixture-forms.js') });
   const session = load('platform/session.js', { './config.js': config, './server.js': server, './fixtures.js': fixtures });
   const execution = load('platform/execution.js', { './config.js': config, './server.js': server, './session.js': session });
-  const forms = load('platform/forms.js', { './server.js': server, './execution.js': execution, './session.js': session });
+  const forms = load('platform/forms.js', { './server.js': server, './execution.js': execution, './session.js': session, './form-rules.js': load('platform/form-rules.js') });
   const sanitize = load('platform/sanitize.js');
   const view = load('platform/form-view.js', { './sanitize.js': sanitize });
   const text = load('platform/form-text.js', { './form-translations.json': require('./platform/form-translations.json'), './execution-translations.json': require('./platform/execution-translations.json') }).formText;

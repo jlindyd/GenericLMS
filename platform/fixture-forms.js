@@ -23,8 +23,14 @@ const make = () => ({
   ] },
 });
 // Pages and API routes are bundled separately, so the review data lives on globalThis to be shared between them.
-const shared = globalThis.__genericLmsFixtureForms || (globalThis.__genericLmsFixtureForms = { forms: make() });
-export const fixtureCourse = () => ({ id: 1, name: 'Strategic Planning in the AI Age', type: 'SelfPaced', progress: 0.25, lessons: [{ id: 11, name: 'Review', isEnabled: true, tasks: Object.values(shared.forms).map(f => ({ id: f.id, name: f.name, type: f.type, status: f.status, isEnabled: true })) }] });
+const makeAssignments = () => ({
+  41: { id: 41, name: 'Business plan assignment', type: 'Assignment', status: 'NotStarted', assignedTo: 'Trainee', isEnabled: true, body: '<p>Turn in a short business plan.</p>', minPassingScore: 0.6, maxFileSize: 5242880, maxFileCount: 1, allowedFileExtensions: '.doc,.docx,.zip', files: [] },
+  42: { id: 42, name: 'Marketing assignment (graded)', type: 'Assignment', status: 'Passed', assignedTo: 'Trainee', isEnabled: true, body: '<p>Describe your marketing plan.</p>', minPassingScore: 0.6, score: 0.85, feedback: 'Clear and practical. Well done.', maxFileSize: 5242880, maxFileCount: 1, allowedFileExtensions: '.doc,.docx,.zip', files: [{ name: 'plan-42.docx', originalName: 'My marketing plan.docx', size: 20480, uploadDate: '2026-10-01T00:00:00Z', url: 'https://example.test/plan-42.docx' }] },
+  43: { id: 43, name: 'Finance assignment (not passed)', type: 'Assignment', status: 'Failed', assignedTo: 'Trainee', isEnabled: true, body: '<p>Prepare a budget.</p>', minPassingScore: 0.6, score: 0.4, feedback: 'Please add the cash flow table.', maxFileSize: 5242880, maxFileCount: 1, allowedFileExtensions: '.doc,.docx,.zip', files: [{ name: 'budget-43.zip', originalName: 'budget.zip', size: 40960, uploadDate: '2026-10-02T00:00:00Z', url: 'https://example.test/budget-43.zip' }] },
+});
+const shared = globalThis.__genericLmsFixtureForms || (globalThis.__genericLmsFixtureForms = { forms: make(), assignments: makeAssignments() });
+export const fixtureCourse = () => ({ id: 1, name: 'Strategic Planning in the AI Age', type: 'SelfPaced', progress: 0.25, lessons: [{ id: 11, name: 'Review', isEnabled: true, tasks: [...Object.values(shared.forms), ...Object.values(shared.assignments)].map(f => ({ id: f.id, name: f.name, type: f.type, status: f.status, isEnabled: true })) }] });
+export const fixtureAssignment = id => { const item = shared.assignments[id]; if (!item) throw new Error('No fixture for this request.'); return JSON.parse(JSON.stringify(item)); };
 export const fixtureForm = id => { const form = shared.forms[id]; if (!form) throw new Error('No fixture for this request.'); return JSON.parse(JSON.stringify(form)); };
 
 // The learner's answers are written back into the questions, the way the service returns them.
@@ -44,4 +50,11 @@ export function fixtureSubmit(id, { op, answers }) {
     form.score = right / checks.length; form.status = form.score >= form.minPassingScore ? 'Passed' : 'Failed';
   } else form.status = 'Finished';
 }
-export const resetFixtureForms = () => { shared.forms = make(); };
+// Review-mode copies of the learner's assignment actions: a file is added, removed, or submitted for grading.
+export function fixtureAssignmentChange(id, action, detail) {
+  const item = shared.assignments[id]; if (!item) return;
+  if (action === 'FILE') { item.files = [{ name: `file-${id}-${Date.now()}.bin`, originalName: detail.name, size: detail.size, uploadDate: new Date().toISOString(), url: 'https://example.test/' + encodeURIComponent(detail.name) }]; item.status = 'Saved'; }
+  if (action === 'DELETE') { item.files = []; item.status = 'Saved'; }
+  if (action === 'POST') item.status = 'WaitingForGrading';
+}
+export const resetFixtureForms = () => { shared.forms = make(); shared.assignments = makeAssignments(); };
