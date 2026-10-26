@@ -21,7 +21,7 @@ Rollback: rebuild without that flag. Existing dashboard links remain on the curr
 
 ## Required before enabling
 
-1. Serve GenericLMS on an approved test hostname compatible with the existing portal's shared-domain cookies. Local 127.0.0.1 cannot receive `.hplife-test.dyd.solutions` cookies; no authentication workaround is introduced. Verify the portal's return destination too: the current sign-in helper still builds it from the configured reference-site URL, so a distinct GenericLMS hostname needs its canonical return target configured and verified before rollout.
+1. Serve GenericLMS on an approved HTTPS test hostname compatible with the existing portal's shared-domain cookies. Local 127.0.0.1 cannot receive `.hplife-test.dyd.solutions` cookies; no authentication workaround is introduced. Set `NEXT_PUBLIC_LEARNER_ORIGIN` to that actual origin at build time. It defaults to the existing reference address; no hostname is provisioned automatically. The origin must be in the selected environment's domain and cannot include a path, query or credentials. Sign-in redirects, header login and course enrollment return to that configured app address. The portal's own return-address policy must allow it. Cookie names, refresh endpoint and shared session remain unchanged.
 2. Use a designated test learner/course to validate task retrieval, completion, unlocked navigation, refresh/resume and dashboard progress. No real learner progress writes were performed during implementation.
 3. Compare the execution header, sidebar, task body and mobile/Arabic views against HP LIFE Test. The initial frame uses the existing brand and shared fonts, but pixel parity is not yet verified. Keep rollout disabled until approved.
 4. Validate HTML resource URLs and completion semantics on actual static Content tasks. Interactive Content remains in the legacy player until its message handling is migrated.
@@ -33,3 +33,5 @@ Video/progress; editable forms, surveys and quizzes with distinct rules; assignm
 ## Checks
 
 `npm test` covers existing site behavior plus execution links, invalid IDs, course/task relationships, locked tasks, self-paced filtering, interactive fallback, auto-validation progress reads, the exact completion endpoint/body and same-origin/session route guards. All execution writes are mocked in tests.
+
+Shared-session preparation: the live HP LIFE Test dashboard was accessible using its existing session. A compatible hostname pointing to GenericLMS is still required before that session can reach the local app. No session token was copied across origins and no separate login was added. Do not treat the configurable return URL as completing DNS, HTTPS, hosting, or real learner execution verification.

@@ -1,4 +1,4 @@
-import { connection, resolveLocale } from './config.js';
+import { connection, learnerUrl, resolveLocale } from './config.js';
 import { readService, ServiceError } from './server.js';
 import { fixtureResponse, fixturesEnabled } from './fixtures.js';
 
@@ -32,14 +32,14 @@ export async function refreshSession(refreshToken, { fetcher = fetch } = {}) {
 // Where a visitor who is not signed in goes: the sign-in site's logout address clears stale cookies and then shows the sign-in page,
 // which returns here afterwards.
 export function signInRedirect(resolvedUrl, locale) {
-  const params = new URLSearchParams({ continue: `${connection.reference}${resolvedUrl}`, locale: resolveLocale(locale) });
+  const params = new URLSearchParams({ continue: learnerUrl(resolvedUrl), locale: resolveLocale(locale) });
   return { redirect: { destination: `${connection.auth}/api/logout?${params}`, permanent: false } };
 }
 
 // For getServerSideProps of pages that need a signed-in visitor: resolves to { token } or { redirect }.
 export async function requireSession(context, { fetcher } = {}) {
   const { req, res, resolvedUrl } = context;
-  const locale = Array.isArray(context.query?.lang) ? context.query.lang[0] : context.query?.lang;
+  const locale = (Array.isArray(context.query?.lang) ? context.query.lang[0] : context.query?.lang) || req.cookies?.NEXT_LOCALE;
   const access = req.cookies?.[cookieNames.access];
   if (access) return { token: access };
   const lines = await refreshSession(req.cookies?.[cookieNames.refresh], { fetcher });

@@ -5,7 +5,7 @@ import { CheckCircle, RadioButtonUnchecked } from '@mui/icons-material';
 import CmsContent from './CmsContent';
 import HighlightedSection from './HighlightedSection';
 import ShareButtons from './ShareButtons';
-import { connection } from '../platform/config';
+import { connection, learnerUrl } from '../platform/config';
 import { fill, translate, translateCount } from '../platform/i18n';
 
 // Course page pieces, ported from the existing site (DetailHeader, DetailBanner, DetailCard, DetailOverview, Tabs, CourseLessons).
@@ -56,7 +56,7 @@ const languageLabel = code => languageNames[code] || code;
 
 // Signed-out visitors: Enroll sends them to the sign-in page, then back to this course on the learner site.
 export function EnrollButton({ course, locale, fullWidth }) {
-  const back = `${connection.reference}/course/${course.slug}`;
+  const back = learnerUrl(`/course/${encodeURIComponent(course.slug)}?lang=${locale}`);
   return <Button variant="containedPrimary" href={`${connection.auth}/${locale}/login?continue=${encodeURIComponent(back)}`} aria-label={translate(locale, 'CoursePage', 'enrollCourse')} sx={{ minWidth: 130, ...(fullWidth ? { width: '100%', borderRadius: '12px' } : {}) }}>{translate(locale, 'CoursePage', 'enrollCourse')}</Button>;
 }
 

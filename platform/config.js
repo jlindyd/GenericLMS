@@ -9,6 +9,21 @@ export const environments={
 const environmentId=process.env.NEXT_PUBLIC_APP_ENV||'hplife-test';
 if(!environments[environmentId])throw new Error('Unknown application environment.');
 export const connection=Object.freeze(environments[environmentId]);
+// This is the app's return address, not a second authentication service. It must
+// stay inside the selected environment's cookie domain; never infer it from Host.
+export function validateLearnerOrigin(value) {
+ const url = new URL(value || connection.reference);
+ const domain = new URL(connection.reference).hostname.replace(/^www\./, '');
+ if (url.protocol !== 'https:' || url.username || url.password || url.pathname !== '/' || url.search || url.hash || (url.hostname !== domain && !url.hostname.endsWith('.' + domain))) throw new Error('Learner origin must be an HTTPS address in the selected test environment, without a path or credentials.');
+ return url.origin;
+}
+export const learnerOrigin = validateLearnerOrigin(process.env.NEXT_PUBLIC_LEARNER_ORIGIN);
+export function learnerUrl(path = '/') {
+ if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//') || path.includes('\\')) throw new Error('Invalid learner return path.');
+ const url = new URL(path, learnerOrigin);
+ if (url.origin !== learnerOrigin) throw new Error('Invalid learner return destination.');
+ return url.href;
+}
 export const origins=Object.freeze({learner:'http://127.0.0.1:3020',cms:'http://127.0.0.1:3021',auth:'http://127.0.0.1:3022'});
 // Windows that may send CMS content to /preview: the CMS app on either spelling of the local address.
 export const cmsOrigins=Object.freeze([origins.cms,origins.cms.replace('127.0.0.1','localhost')]);
