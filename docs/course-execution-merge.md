@@ -58,3 +58,6 @@ After setup, rebuild and run GenericLMS on port 3020, and run `npm run local:htt
 To undo the machine setup, remove the single hosts entry marked `GenericLMS local HTTPS`, remove the certificate named `GenericLMS local HTTPS only` from the current user's Personal and Trusted Root stores, stop the proxy, and remove the origin override from `.env.local`. The original hosts backup is saved for reference; do not overwrite unrelated later hosts edits with that backup.
 
 Current verification: automated renewal and request replay tests pass; local HTTPS activation and real shared-cookie verification remain pending an Administrator setup run.
+
+## Shared-session check (2026-10-26)
+With the local HTTPS hostname set up, opening `https://generic-local.hplife-test.dyd.solutions/api/account` in Chrome while signed in to HP LIFE Test returned that account's details (role Admin). So the portal's shared-domain cookies do reach GenericLMS on this hostname and the account call works. Not yet verified with this session: signed-in pages on the real session, task retrieval or completion, and course rollout (still off by default). No course task was opened.
